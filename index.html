@@ -171,6 +171,28 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
       <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f8-1f1e6.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/sa.png';this.onerror=null;"> AR
     </button>
   </div>
+  <div style="margin-top:8px;">
+    <button id="fav-btn" onclick="openFavPicker()"
+      style="padding:5px 16px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s;">
+      ⭐ <span id="fav-btn-txt">Choose your team</span>
+    </button>
+  </div>
+</div>
+
+<!-- FAV PICKER MODAL -->
+<div id="fav-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;overflow-y:auto;padding:20px;">
+  <div style="background:#0f2a18;border:1px solid var(--border);border-radius:12px;max-width:600px;margin:0 auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:.1em;color:var(--green)" id="fav-modal-title">Choose Your Team</h2>
+      <button onclick="closeFavPicker()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div id="fav-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button onclick="setFav(null)" style="padding:6px 16px;border:1px solid var(--muted);background:transparent;color:var(--muted);border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;">
+        🚫 <span id="fav-no-team">No favourite</span>
+      </button>
+    </div>
+  </div>
 </div>
 <div class="tabs">
   <div class="tab active" id="tab-groups" onclick="switchTab('groups')"><span id="tab-g-lbl">📋 Groups</span></div>
@@ -239,7 +261,8 @@ const T={
     clickTeam:'Pick a team above ↑',
     best3:'Best 3rd-Place Teams',best3hint:'👆 Click a row to qualify / disqualify · 🤖 Auto · ✏️ Manual',max8:'Maximum 8 teams already selected',resetAuto:'Reset to auto ranking',
     rank:'Rank',team:'Team',group:'Group',
-    note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable'},
+    note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable',
+    chooseTeam:'Choose your team',noFav:'No favourite'},
   fr:{title:'KORASIM — COUPE DU MONDE FIFA 2026',sub:'Simuler · Prédire · Partager',
     tabG:'📋 Groupes',tabB:'🏆 Tableau',groups:'Phase de Groupes',bracket:'Tableau Final',
     q1:'1er qualifié',q2:'2e qualifié',q3:'Possible 3e',
@@ -255,7 +278,8 @@ const T={
     clickTeam:'Clique sur une équipe ↑',
     best3:'Meilleurs 3es',best3hint:"👆 Clique pour qualifier/disqualifier · 🤖 Auto · ✏️ Manuel",max8:'Maximum 8 équipes déjà sélectionnées',resetAuto:'Revenir au classement auto',
     rank:'Rang',team:'Équipe',group:'Groupe',
-    note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable'},
+    note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable',
+    chooseTeam:'Choisir votre équipe',noFav:'Aucune équipe favorite'},
   ar:{title:'كوراسيم — كأس العالم FIFA 2026',sub:'محاكاة · تنبؤ · مشاركة',
     tabG:'📋 المجموعات',tabB:'🏆 الجدول',groups:'مرحلة المجموعات',bracket:'مرحلة الإقصاء',
     q1:'المتأهل الأول',q2:'المتأهل الثاني',q3:'ثالث محتمل',
@@ -271,7 +295,8 @@ const T={
     clickTeam:'انقر على فريق أعلاه ↑',
     best3:'أفضل الفرق الثالثة',best3hint:'👆 انقر للتأهيل أو الإقصاء · 🤖 تلقائي · ✏️ يدوي',max8:'تم اختيار 8 فرق بالفعل',resetAuto:'إعادة الترتيب التلقائي',
     rank:'الترتيب',team:'الفريق',group:'المجموعة',
-    note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة'},
+    note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة',
+    chooseTeam:'اختر فريقك',noFav:'بدون فريق مفضل'},
 };
 
 // ══════ TEAM DATA ══════
@@ -369,6 +394,7 @@ const R32P=[
 
 // ══════ STATE ══════
 let LANG='en';
+let FAV=null; // user's favourite team code
 let SC={},MO={},MOM={},BK={};
 
 function tn(c){return TNAMES[c]?TNAMES[c][LANG]||c:c;}
@@ -709,7 +735,7 @@ function patchStandings(gid){
     if(!tr)return;
     tr.dataset.code=s.code;
     tr.className=pos===0?'rk1':pos===1?'rk2':pos===2?'rk3':'';
-    if(s.code==='MA')tr.style.outline='1px solid rgba(200,16,46,.35)';
+    if(s.code===FAV)tr.style.outline='1px solid rgba(200,16,46,.35)';
     else tr.style.outline='';
     const diffStr=s.gd>0?'+'+s.gd:s.gd+'';
     const diffColor=s.gd>0?'var(--green)':s.gd<0?'var(--red)':'var(--text)';
@@ -722,7 +748,7 @@ function patchStandings(gid){
           <span style="font-weight:700;color:${posColor};font-size:11px;min-width:14px">${pos+1}</span>
           ${flagImg(s.code,24)}
           <span class="tn">${tn(s.code)}</span>
-          ${s.code==='MA'?'<span style="color:var(--red);font-size:10px">★</span>':''}
+          ${s.code===FAV?'<span style="color:var(--red);font-size:10px">⭐</span>':''}
           ${badge}
         </div>
       </td>
@@ -828,12 +854,12 @@ function renderBracket(){
 function mkBM(rk,idx,m){
   const t=T[LANG];
   const div=document.createElement('div');
-  const hasMar=(m.t1&&m.t1.code==='MA')||(m.t2&&m.t2.code==='MA');
+  const hasMar=(m.t1&&m.t1.code===FAV)||(m.t2&&m.t2.code===FAV);
   div.className='bm'+(hasMar?' hamar':'');
   if(!m.t1&&!m.t2){div.innerHTML=`<div class="bpend">${t.pending}</div>`;return div;}
   [0,1].forEach(side=>{
     const tm=side===0?m.t1:m.t2;
-    const isSel=m.winner===side,isMar=tm&&tm.code==='MA';
+    const isSel=m.winner===side,isMar=tm&&tm.code===FAV;
     const bt=document.createElement('div');
     if(!tm){bt.className='bt tbd';bt.innerHTML=`<span>${t.tbd}</span>`;}
     else{
@@ -855,7 +881,7 @@ function mkBM(rk,idx,m){
 function mkFinalCard(){
   const t=T[LANG],m=BK.fin[0];
   const t1=m.t1,t2=m.t2,w=win(m);
-  const isMar1=t1&&t1.code==='MA',isMar2=t2&&t2.code==='MA',isMarW=w&&w.code==='MA';
+  const isMar1=t1&&t1.code===FAV,isMar2=t2&&t2.code===FAV,isMarW=w&&w.code===FAV;
   const div=document.createElement('div');div.className='fcard';
   div.innerHTML=`
     <div class="ftitle">${t.final}</div>
@@ -942,7 +968,7 @@ function setLang(l){
   });
   if(l==='ar') document.body.style.fontFamily="'Cairo',sans-serif";
   else document.body.style.fontFamily="'Rajdhani',sans-serif";
-  updateGroupText();updateUI();
+  updateGroupText();updateUI();updateFavBtn();
   GD.forEach(g=>patchStandings(g.id));
   renderBest3rds();
   if(document.getElementById('page-bracket').classList.contains('active'))renderBracket();
@@ -983,7 +1009,65 @@ function updateUI(){
   document.title='KoraSim — '+t.title;
 }
 
-function detectLang(){
+// ══════ FAVOURITE TEAM PICKER ══════
+function openFavPicker(){
+  const modal=document.getElementById('fav-modal');
+  const grid=document.getElementById('fav-grid');
+  const t=T[LANG];
+  document.getElementById('fav-modal-title').textContent=t.chooseTeam||'Choose Your Team';
+  document.getElementById('fav-no-team').textContent=t.noFav||'No favourite';
+  modal.style.display='block';
+  grid.innerHTML='';
+  // List all 48 teams
+  GD.forEach(g=>{
+    g.teams.forEach(code=>{
+      const btn=document.createElement('button');
+      const isSel=FAV===code;
+      btn.style.cssText=`display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:${isSel?'700':'400'};border:${isSel?'2px solid var(--red)':'1px solid var(--border)'};background:${isSel?'rgba(200,16,46,.15)':'var(--card2)'};color:${isSel?'#ff9aaa':'var(--text)'};width:100%;transition:all .15s;`;
+      btn.innerHTML=`${flagImg(code,20)}<span>${tn(code)}</span>${isSel?'<span style="margin-left:auto">⭐</span>':''}`;
+      btn.onclick=()=>setFav(code);
+      grid.appendChild(btn);
+    });
+  });
+}
+
+function closeFavPicker(){
+  document.getElementById('fav-modal').style.display='none';
+}
+
+function setFav(code){
+  FAV=code;
+  closeFavPicker();
+  updateFavBtn();
+  // Re-render everything to apply highlight
+  GD.forEach(g=>patchStandings(g.id));
+  renderBest3rds();
+  if(document.getElementById('page-bracket').classList.contains('active')) renderBracket();
+  saveData();
+}
+
+function updateFavBtn(){
+  const btn=document.getElementById('fav-btn');
+  const txt=document.getElementById('fav-btn-txt');
+  const t=T[LANG];
+  if(FAV){
+    btn.style.borderColor='var(--red)';
+    btn.style.color='#ff9aaa';
+    btn.style.background='rgba(200,16,46,.1)';
+    txt.innerHTML=`${flagImg(FAV,16)} ${tn(FAV)}`;
+  } else {
+    btn.style.borderColor='var(--border)';
+    btn.style.color='var(--muted)';
+    btn.style.background='var(--card)';
+    txt.textContent=t.chooseTeam||'Choose your team';
+  }
+}
+
+// Close modal on background click
+document.addEventListener('click', e=>{
+  const modal=document.getElementById('fav-modal');
+  if(modal && e.target===modal) closeFavPicker();
+});
   const nav=navigator.language||navigator.userLanguage||'en';
   const l=nav.toLowerCase();
   if(l.startsWith('ar'))return 'ar';
@@ -1000,7 +1084,7 @@ function switchTab(id){
 }
 
 function saveData(){
-  try{localStorage.setItem('korasim_v2',JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE}));toast(T[LANG].saved);}
+  try{localStorage.setItem('korasim_v2',JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE,FAV}));toast(T[LANG].saved);}
   catch(e){toast('Error');}
 }
 function loadSaved(){
@@ -1010,12 +1094,13 @@ function loadSaved(){
       if(p.BK)BK=p.BK;if(p.LANG)LANG=p.LANG;
       if(p.BEST3_SEL)BEST3_SEL=p.BEST3_SEL;
       if(p.BEST3_MODE!==undefined)BEST3_MODE=p.BEST3_MODE;
+      if(p.FAV!==undefined)FAV=p.FAV;
     }
   }catch(e){}
 }
 function shareLink(){
   try{
-    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL}))));
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE,FAV}))));
     const url=location.href.split('?')[0]+'?d='+enc;
     navigator.clipboard.writeText(url).then(()=>toast(T[LANG].copied)).catch(()=>prompt('Copy:',url));
   }catch(e){toast('Error');}
@@ -1027,14 +1112,15 @@ function loadFromUrl(){
       if(parsed.MOM)MOM=parsed.MOM;if(parsed.BK)BK=parsed.BK;
       if(parsed.LANG)LANG=parsed.LANG;
       if(parsed.BEST3_SEL)BEST3_SEL=parsed.BEST3_SEL;
+      if(parsed.BEST3_MODE!==undefined)BEST3_MODE=parsed.BEST3_MODE;
+      if(parsed.FAV!==undefined)FAV=parsed.FAV;
     }
   }catch(e){}
 }
 function resetAll(){
   localStorage.removeItem('korasim_v2');
   initSC();initBK();
-  BEST3_SEL={};
-  BEST3_MODE=0;
+  BEST3_SEL={};BEST3_MODE=0;FAV=null;
   GD.forEach(g=>{
     GM.forEach(([ai,bi],mi)=>[0,1].forEach(si=>{
       const inp=document.getElementById(`sc-${g.id}-${mi}-${si}`);
@@ -1042,23 +1128,24 @@ function resetAll(){
     }));
     patchStandings(g.id);
   });
+  updateFavBtn();
   renderBest3rds();propagate();
   if(document.getElementById('page-bracket').classList.contains('active'))renderBracket();
   toast(T[LANG].resetDone);
 }
+
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-
-// ══════ BOOT ══════
 LANG=detectLang();
 initSC();initBK();
 loadSaved();loadFromUrl();
 setLang(LANG);
 buildGroups();
 propagate();
+updateFavBtn();
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"KoraSim — FIFA World Cup 2026 Simulator","url":"https://korasim.com","applicationCategory":"SportsApplication","inLanguage":["en","fr","ar"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
