@@ -161,9 +161,9 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
   <h1 id="h-title">KORASIM — FIFA WORLD CUP 2026</h1>
   <p id="h-sub">Simulate · Predict · Share</p>
   <div class="lang-bar">
-    <button class="lang-btn" data-l="en" onclick="setLang('en')">🇬🇧 EN</button>
-    <button class="lang-btn" data-l="fr" onclick="setLang('fr')">🇫🇷 FR</button>
-    <button class="lang-btn" data-l="ar" onclick="setLang('ar')">🇸🇦 AR</button>
+    <button class="lang-btn" data-l="en" onclick="setLang('en')"><img src="https://flagcdn.com/w20/gb.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="EN"> EN</button>
+    <button class="lang-btn" data-l="fr" onclick="setLang('fr')"><img src="https://flagcdn.com/w20/fr.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="FR"> FR</button>
+    <button class="lang-btn" data-l="ar" onclick="setLang('ar')"><img src="https://flagcdn.com/w20/sa.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="AR"> AR</button>
   </div>
 </div>
 <div class="tabs">
@@ -294,7 +294,8 @@ const TNAMES={
   PA:{en:'Panama',fr:'Panama',ar:'بنما'},GH:{en:'Ghana',fr:'Ghana',ar:'غانا'},
 };
 
-// Flag URLs via flagcdn (works on ALL platforms including Windows)
+// Always use flagcdn.com images — works on ALL platforms including Windows
+// flagcdn is a free, reliable CDN specifically for flag images
 const FURL={
   MX:'mx',KR:'kr',ZA:'za',CZ:'cz',CA:'ca',CH:'ch',QA:'qa',BA:'ba',
   BR:'br',MA:'ma',SC:'gb-sct',HT:'ht',US:'us',AU:'au',PY:'py',TR:'tr',
@@ -308,11 +309,7 @@ function flagImg(code,size){
   const s=size||20;
   const h=Math.round(s*0.7);
   const iso=FURL[code]||code.toLowerCase();
-  return `<img src="https://flagcdn.com/w${s}/${iso}.png" 
-    srcset="https://flagcdn.com/w${s*2}/${iso}.png 2x"
-    width="${s}" height="${h}" 
-    style="border-radius:2px;flex-shrink:0;vertical-align:middle;object-fit:cover;"
-    alt="${code}" loading="lazy">`;
+  return `<img src="https://flagcdn.com/w${s*2}/${iso}.png" width="${s}" height="${h}" style="border-radius:2px;flex-shrink:0;vertical-align:middle;object-fit:cover;display:inline-block;" alt="${code}" loading="lazy">`;
 }
 
 const GD=[
