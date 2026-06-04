@@ -947,10 +947,11 @@ function patchStandings(gid){
     const venueStr = sched ? sched[1] : '';
     const matchRow = document.getElementById(`mr-${gid}-${mi}`);
     if(matchRow){
-      let timeEl = matchRow.querySelector('.match-time');
+      const timeId = `mt-${gid}-${mi}`;
+      let timeEl = document.getElementById(timeId);
       if(!timeEl){
         timeEl = document.createElement('div');
-        timeEl.className = 'match-time';
+        timeEl.id = timeId;
         timeEl.style.cssText='font-size:9px;color:var(--muted);text-align:center;padding:1px 0 3px;border-bottom:1px solid rgba(255,255,255,.03);margin-bottom:2px;';
         matchRow.parentNode.insertBefore(timeEl, matchRow);
       }
