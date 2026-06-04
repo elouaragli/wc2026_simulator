@@ -1626,7 +1626,8 @@ function loadSaved(){
 }
 function shareLink(){
   try{
-    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE,FAV}))));
+    const activeTab = document.querySelector('.page.active')?.id?.replace('page-','') || 'groups';
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE,FAV,TAB:activeTab}))));
     const url=location.href.split('?')[0]+'?d='+enc;
     navigator.clipboard.writeText(url).then(()=>toast(T[LANG].copied)).catch(()=>prompt('Copy:',url));
   }catch(e){toast('Error');}
@@ -1640,6 +1641,7 @@ function loadFromUrl(){
       if(parsed.BEST3_SEL)BEST3_SEL=parsed.BEST3_SEL;
       if(parsed.BEST3_MODE!==undefined)BEST3_MODE=parsed.BEST3_MODE;
       if(parsed.FAV!==undefined)FAV=parsed.FAV;
+      if(parsed.TAB)window._startTab=parsed.TAB;
     }
   }catch(e){}
 }
@@ -1673,6 +1675,10 @@ buildGroups();
 propagate();
 updateFavBtn();
 updateRoundTabLabels();
+// Restore tab from shared link
+if(window._startTab && window._startTab !== 'groups'){
+  switchTab(window._startTab);
+}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"KoraSim — FIFA World Cup 2026 Simulator","url":"https://korasim.com","applicationCategory":"SportsApplication","inLanguage":["en","fr","ar"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
