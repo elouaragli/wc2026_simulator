@@ -534,20 +534,47 @@ function renderBest3rds(){
 
 // ══════ BRACKET PROPAGATION ══════
 function propagate(){
-  R32P.forEach(([g1,r1,g2,r2,loc],i)=>{
+  // Get qualified best 3rds (user-selected or auto top 8)
+  const best3 = getBest3Qualified();
+  // Sort them for consistent slot assignment (by group ranking)
+  const b3sorted = [...best3].sort((a,b)=>{
+    if(b.pts!==a.pts)return b.pts-a.pts;
+    if(b.gd!==a.gd)return b.gd-a.gd;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    return 0;
+  });
+
+  // Slots 0-11: standard 1st vs 2nd matchups
+  const fixed12 = R32P.slice(0,12);
+  fixed12.forEach(([g1,r1,g2,r2,loc],i)=>{
     const nt1=getQ(g1,r1),nt2=getQ(g2,r2);
     const m=BK.r32[i];
-    // Only reset if team CODE changed (not just name translation)
     const c1changed=!teq(m.t1,nt1), c2changed=!teq(m.t2,nt2);
     if(c1changed||c2changed){
       BK.r32[i]={t1:nt1,t2:nt2,winner:null,s1:m.s1,s2:m.s2,loc};
     } else {
-      // Update name only (language change) — keep winner/scores
       if(nt1)BK.r32[i].t1=nt1;
       if(nt2)BK.r32[i].t2=nt2;
       BK.r32[i].loc=loc;
     }
   });
+
+  // Slots 12-15: best 3rd-place teams (2 per match, from qualified list)
+  // Pairs: [b3[0] vs b3[1]], [b3[2] vs b3[3]], [b3[4] vs b3[5]], [b3[6] vs b3[7]]
+  const locs=['Vancouver','Guadalajara','Miami','Los Angeles'];
+  for(let i=0;i<4;i++){
+    const nt1 = b3sorted[i*2]   ? {code:b3sorted[i*2].code,   n:tn(b3sorted[i*2].code)}   : null;
+    const nt2 = b3sorted[i*2+1] ? {code:b3sorted[i*2+1].code, n:tn(b3sorted[i*2+1].code)} : null;
+    const m=BK.r32[12+i];
+    const c1changed=!teq(m.t1,nt1), c2changed=!teq(m.t2,nt2);
+    if(c1changed||c2changed){
+      BK.r32[12+i]={t1:nt1,t2:nt2,winner:null,s1:'',s2:'',loc:locs[i]};
+    } else {
+      if(nt1)BK.r32[12+i].t1=nt1;
+      if(nt2)BK.r32[12+i].t2=nt2;
+    }
+  }
+
   for(let i=0;i<8;i++)upd(BK.r16,i,win(BK.r32[i*2]),win(BK.r32[i*2+1]));
   for(let i=0;i<4;i++)upd(BK.qf,i,win(BK.r16[i*2]),win(BK.r16[i*2+1]));
   for(let i=0;i<2;i++)upd(BK.sf,i,win(BK.qf[i*2]),win(BK.qf[i*2+1]));
