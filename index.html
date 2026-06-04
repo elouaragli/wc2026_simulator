@@ -1204,6 +1204,90 @@ function updateUI(){
 }
 
 // ══════ RENDER INDIVIDUAL ROUND ══════
+
+// ══════ MATCH ORIGIN LABELS ══════
+const MATCH_LABELS = {
+  r32: [
+    ["1st Group A","2nd Group B"],["2nd Group A","1st Group B"],
+    ["1st Group C","2nd Group D"],["2nd Group C","1st Group D"],
+    ["1st Group E","2nd Group F"],["2nd Group E","1st Group F"],
+    ["1st Group G","2nd Group H"],["2nd Group G","1st Group H"],
+    ["1st Group I","2nd Group J"],["2nd Group I","1st Group J"],
+    ["1st Group K","2nd Group L"],["2nd Group K","1st Group L"],
+    ["Best 3rd A/C","Best 3rd B/D"],["Best 3rd E/G","Best 3rd F/H"],
+    ["Best 3rd I/K","Best 3rd J/L"],["Best 3rd #7","Best 3rd #8"],
+  ],
+  r16: [
+    ["W Match 1","W Match 2"],["W Match 3","W Match 4"],
+    ["W Match 5","W Match 6"],["W Match 7","W Match 8"],
+    ["W Match 9","W Match 10"],["W Match 11","W Match 12"],
+    ["W Match 13","W Match 14"],["W Match 15","W Match 16"],
+  ],
+  qf: [
+    ["W R16 #1","W R16 #2"],["W R16 #3","W R16 #4"],
+    ["W R16 #5","W R16 #6"],["W R16 #7","W R16 #8"],
+  ],
+  sf: [
+    ["W QF #1","W QF #2"],["W QF #3","W QF #4"],
+  ],
+};
+
+// Translated versions
+const MATCH_LABELS_FR = {
+  r32: [
+    ["1er Gr. A","2e Gr. B"],["2e Gr. A","1er Gr. B"],
+    ["1er Gr. C","2e Gr. D"],["2e Gr. C","1er Gr. D"],
+    ["1er Gr. E","2e Gr. F"],["2e Gr. E","1er Gr. F"],
+    ["1er Gr. G","2e Gr. H"],["2e Gr. G","1er Gr. H"],
+    ["1er Gr. I","2e Gr. J"],["2e Gr. I","1er Gr. J"],
+    ["1er Gr. K","2e Gr. L"],["2e Gr. K","1er Gr. L"],
+    ["Meil. 3e A/C","Meil. 3e B/D"],["Meil. 3e E/G","Meil. 3e F/H"],
+    ["Meil. 3e I/K","Meil. 3e J/L"],["Meil. 3e #7","Meil. 3e #8"],
+  ],
+  r16: [
+    ["V Match 1","V Match 2"],["V Match 3","V Match 4"],
+    ["V Match 5","V Match 6"],["V Match 7","V Match 8"],
+    ["V Match 9","V Match 10"],["V Match 11","V Match 12"],
+    ["V Match 13","V Match 14"],["V Match 15","V Match 16"],
+  ],
+  qf: [
+    ["V 16e #1","V 16e #2"],["V 16e #3","V 16e #4"],
+    ["V 16e #5","V 16e #6"],["V 16e #7","V 16e #8"],
+  ],
+  sf: [
+    ["V QF #1","V QF #2"],["V QF #3","V QF #4"],
+  ],
+};
+
+const MATCH_LABELS_AR = {
+  r32: [
+    ["1 المج. أ","2 المج. ب"],["2 المج. أ","1 المج. ب"],
+    ["1 المج. ج","2 المج. د"],["2 المج. ج","1 المج. د"],
+    ["1 المج. هـ","2 المج. و"],["2 المج. هـ","1 المج. و"],
+    ["1 المج. ز","2 المج. ح"],["2 المج. ز","1 المج. ح"],
+    ["1 المج. ط","2 المج. ي"],["2 المج. ط","1 المج. ي"],
+    ["1 المج. ك","2 المج. ل"],["2 المج. ك","1 المج. ل"],
+    ["3rd A/C","3rd B/D"],["3rd E/G","3rd F/H"],
+    ["3rd I/K","3rd J/L"],["3rd #7","3rd #8"],
+  ],
+  r16: [
+    ["ف م1","ف م2"],["ف م3","ف م4"],["ف م5","ف م6"],["ف م7","ف م8"],
+    ["ف م9","ف م10"],["ف م11","ف م12"],["ف م13","ف م14"],["ف م15","ف م16"],
+  ],
+  qf: [
+    ["ف دور16 #1","ف دور16 #2"],["ف دور16 #3","ف دور16 #4"],
+    ["ف دور16 #5","ف دور16 #6"],["ف دور16 #7","ف دور16 #8"],
+  ],
+  sf: [
+    ["ف رب #1","ف رب #2"],["ف رب #3","ف رب #4"],
+  ],
+};
+
+function getMatchLabel(rk, idx, side){
+  const map = LANG==='fr'?MATCH_LABELS_FR : LANG==='ar'?MATCH_LABELS_AR : MATCH_LABELS;
+  return (map[rk]&&map[rk][idx]) ? map[rk][idx][side] : '';
+}
+
 const ROUND_VENUES = {
   r32:['Toronto','San Francisco','Houston','Monterrey','Boston','New York/NJ','Los Angeles','Seattle','Philadelphia','Dallas','Kansas City','Atlanta','Vancouver','Guadalajara','Miami','Los Angeles'],
   r16:['Philadelphia','Boston','Dallas','Los Angeles','Atlanta','Dallas','Vancouver','Houston'],
@@ -1244,6 +1328,7 @@ function buildFullMatchCard(rk, idx, m, venue, dateStr){
 
   div.innerHTML = `
     <div class="mcf-header">
+      <span style="color:var(--gold);font-weight:600">Match ${idx+1}</span>
       <span>${venue}</span>
       <span>${dateDisplay}</span>
     </div>
@@ -1260,13 +1345,22 @@ function buildFullMatchCard(rk, idx, m, venue, dateStr){
 }
 
 function buildMcfTeam(rk, idx, side, t, winner){
-  if(!t) return `<div class="mcf-team tbd">${T[LANG].tbd||'TBD'}</div>`;
+  const label = getMatchLabel(rk, idx, side);
+  const labelHtml = label ? `<span style="font-size:9px;color:var(--muted);margin-left:4px;opacity:.8">${label}</span>` : '';
+  if(!t){
+    return `<div class="mcf-team tbd">
+      <span style="flex:1">${T[LANG].tbd||'TBD'}</span>
+      <span style="font-size:9px;color:var(--muted)">${label}</span>
+    </div>`;
+  }
   const isSel = winner === side;
   const isFav = t.code === FAV;
   const cls = 'mcf-team' + (isSel?' sel'+(isFav?' fav':''):'');
   return `<div class="${cls}" onclick="pickWRound('${rk}',${idx},${side})">
-    ${flagImg(t.code,22)}<span style="flex:1">${t.n}</span>
-    ${isSel?'<span style="color:var(--green)">✓</span>':''}
+    ${flagImg(t.code,22)}
+    <span style="flex:1">${t.n}</span>
+    ${labelHtml}
+    ${isSel?'<span style="color:var(--green);margin-left:4px">✓</span>':''}
   </div>`;
 }
 
