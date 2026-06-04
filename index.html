@@ -172,6 +172,7 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
 
 .fnote{font-size:11px;color:var(--muted);text-align:center;padding:12px;border-top:1px solid var(--border);}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="header">
@@ -180,13 +181,13 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
   <p id="h-sub">Simulate · Predict · Share</p>
   <div class="lang-bar">
     <button class="lang-btn" data-l="en" onclick="setLang('en')">
-      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1ec-1f1e7.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/gb.png';this.onerror=null;"> EN
+      <span class="flag-wrap" style="display:inline-block;width:20px;height:14px;border-radius:2px;vertical-align:middle;margin-right:4px;background:url('https://flagcdn.com/w40/gb.png') center/cover no-repeat;"></span> EN
     </button>
     <button class="lang-btn" data-l="fr" onclick="setLang('fr')">
-      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1eb-1f1f7.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/fr.png';this.onerror=null;"> FR
+      <span class="flag-wrap" style="display:inline-block;width:20px;height:14px;border-radius:2px;vertical-align:middle;margin-right:4px;background:url('https://flagcdn.com/w40/fr.png') center/cover no-repeat;"></span> FR
     </button>
     <button class="lang-btn" data-l="ar" onclick="setLang('ar')">
-      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f8-1f1e6.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/sa.png';this.onerror=null;"> AR
+      <span class="flag-wrap" style="display:inline-block;width:20px;height:14px;border-radius:2px;vertical-align:middle;margin-right:4px;background:url('https://flagcdn.com/w40/sa.png') center/cover no-repeat;"></span> AR
     </button>
   </div>
   <div style="margin-top:8px;">
@@ -420,25 +421,14 @@ const FURL={
 function flagImg(code, size){
   const s = size || 24;
   const em = FEMOJI[code] || '🏳️';
-  const iso = FURL[code] || code.toLowerCase();
-  const h = Math.round(s * 0.67);
-  // Use twemoji img for cross-platform support
-  return `<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${twemojiCode(em)}.svg"
-    width="${s}" height="${s}"
-    style="border-radius:3px;flex-shrink:0;vertical-align:middle;display:inline-block;"
-    alt="${em}" loading="lazy"
-    onerror="this.src='https://flagcdn.com/w${s*2}/${iso}.png';this.onerror=null;">`;
+  const iso = (FURL[code] || code.toLowerCase());
+  // Use flagcdn PNG loaded via CSS background-image (no img tag = no CORS taint)
+  // Fallback: emoji span for when offline or CORS issues
+  return `<span class="flag-wrap" style="display:inline-flex;align-items:center;justify-content:center;width:${s}px;height:${Math.round(s*0.72)}px;flex-shrink:0;vertical-align:middle;border-radius:3px;overflow:hidden;background:url('https://flagcdn.com/w${s*2}/${iso}.png') center/cover no-repeat,rgba(255,255,255,.1);font-size:0;" title="${em}">&#8203;</span>`;
 }
 
-function twemojiCode(emoji){
-  // Convert emoji to twemoji file code
-  const pts = [];
-  for(let i = 0; i < emoji.length; ){
-    const cp = emoji.codePointAt(i);
-    if(cp !== 0xFE0F) pts.push(cp.toString(16));
-    i += cp > 0xFFFF ? 2 : 1;
-  }
-  return pts.join('-');
+function flagEmoji(code){
+  return FEMOJI[code] || '🏳️';
 }
 
 
@@ -1458,9 +1448,13 @@ function renderFinalPage(){
   const oldPodium = document.getElementById('podium-section');
   if(oldPodium) oldPodium.remove();
 
-  // Podium
-  const podium = buildPodium();
-  grid.insertAdjacentHTML('afterend', podium);
+  // Podium — append inside page-final so screenshot captures it
+  const podiumHtml = buildPodium();
+  if(podiumHtml){
+    const podiumDiv = document.createElement('div');
+    podiumDiv.innerHTML = podiumHtml;
+    document.getElementById('page-final').appendChild(podiumDiv.firstElementChild);
+  }
 }
 
 function buildPodium(){
@@ -1666,7 +1660,12 @@ function resetAll(){
 function downloadImage(){
   const activeId = document.querySelector('.page.active')?.id;
   if(!activeId) return;
-  const el = document.getElementById(activeId);
+
+  // For final page, capture the container which includes the podium
+  let el = document.getElementById(activeId);
+  if(activeId === 'page-final'){
+    el = el.querySelector('.container') || el;
+  }
   if(!el) return;
 
   const btn = document.getElementById('btn-img');
@@ -1674,59 +1673,59 @@ function downloadImage(){
   btn.textContent = '⏳ ...';
   btn.disabled = true;
 
-  // Step 1: Replace all flag <img> with emoji <span> temporarily
+  // Replace all flag CSS backgrounds with emoji text temporarily
   const swapped = [];
-  el.querySelectorAll('img[alt]').forEach(img => {
-    const code = img.alt;
-    const em = FEMOJI[code];
+  document.getElementById(activeId).querySelectorAll('.flag-wrap').forEach(span => {
+    const code = Object.keys(FURL).find(k => {
+      const iso = FURL[k];
+      return span.style.backgroundImage && span.style.backgroundImage.includes('/'+iso+'.');
+    });
+    const em = code ? (FEMOJI[code]||'') : '';
     if(em){
-      const span = document.createElement('span');
-      span.textContent = em;
-      span.style.cssText = `font-size:${Math.max(img.width||20, 16)}px;line-height:1;vertical-align:middle;display:inline-block;`;
-      img.parentNode.replaceChild(span, img);
-      swapped.push({span, img}); // remember to restore
+      const espan = document.createElement('span');
+      espan.textContent = em;
+      espan.style.cssText = `font-size:${span.offsetWidth||20}px;line-height:1;vertical-align:middle;display:inline-block;`;
+      if(span.parentNode){ span.parentNode.replaceChild(espan, span); swapped.push({espan, span}); }
     }
   });
 
-  // Step 2: Add watermark
-  const wm = document.createElement('div');
-  wm.style.cssText = 'text-align:center;padding:12px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:#5a8a6a;background:#0a1a10;margin-top:8px;';
-  wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
-  el.appendChild(wm);
+  // Wrap page + podium in a temp div for capture
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'background:#0a1a10;padding:0;';
+  const pageClone = document.getElementById(activeId);
 
-  // Step 3: Screenshot
-  html2canvas(el, {
+  // Add watermark inside page
+  const wm = document.createElement('div');
+  wm.id = 'wm-tmp';
+  wm.style.cssText = 'text-align:center;padding:12px 0 8px;font-family:"Bebas Neue",cursive;font-size:13px;letter-spacing:.1em;color:#5a8a6a;';
+  wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
+  pageClone.appendChild(wm);
+
+  html2canvas(pageClone, {
     backgroundColor: '#0a1a10',
     scale: 2,
     useCORS: false,
     allowTaint: true,
     logging: false,
+    windowWidth: pageClone.scrollWidth,
+    windowHeight: pageClone.scrollHeight,
   }).then(canvas => {
-    // Step 4: Restore everything
-    el.removeChild(wm);
-    swapped.forEach(({span, img}) => {
-      if(span.parentNode) span.parentNode.replaceChild(img, span);
-    });
-
-    // Step 5: Download
+    pageClone.removeChild(wm);
+    swapped.forEach(({espan,span}) => { if(espan.parentNode) espan.parentNode.replaceChild(span,espan); });
     const link = document.createElement('a');
-    const tabName = activeId.replace('page-','');
-    link.download = `korasim-wc2026-${tabName}.png`;
+    link.download = `korasim-wc2026-${activeId.replace('page-','')}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-
     btn.textContent = origText;
     btn.disabled = false;
     toast(T[LANG].imgDone || '📸 Downloaded!');
   }).catch(err => {
-    // Restore on error too
-    if(wm.parentNode) el.removeChild(wm);
-    swapped.forEach(({span, img}) => {
-      if(span.parentNode) span.parentNode.replaceChild(img, span);
-    });
+    if(document.getElementById('wm-tmp')) pageClone.removeChild(wm);
+    swapped.forEach(({espan,span}) => { if(espan.parentNode) espan.parentNode.replaceChild(span,espan); });
     btn.textContent = origText;
     btn.disabled = false;
-    toast('Error — try again');
+    console.error('Screenshot error:', err);
+    toast('Error: ' + (err?.message||'unknown'));
   });
 }
 
@@ -1752,5 +1751,3 @@ if(window._startTab && window._startTab !== 'groups'){
 </script>
 </body>
 </html>
-<!-- html2canvas for screenshot -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
