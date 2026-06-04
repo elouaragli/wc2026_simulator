@@ -1674,35 +1674,20 @@ function downloadImage(){
   btn.textContent = '⏳ ...';
   btn.disabled = true;
 
+  // Add watermark
+  const wm = document.createElement('div');
+  wm.style.cssText = 'text-align:center;padding:10px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:var(--muted);';
+  wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
+  el.appendChild(wm);
+
   html2canvas(el, {
     backgroundColor: '#0a1a10',
     scale: 2,
     useCORS: true,
-    allowTaint: false,
+    allowTaint: true,
     logging: false,
-    imageTimeout: 15000,
-    onclone: (clonedDoc) => {
-      const clonedEl = clonedDoc.getElementById(activeId);
-
-      // Replace all flag <img> with emoji spans
-      clonedEl.querySelectorAll('img[alt]').forEach(img => {
-        const code = img.alt;
-        const em = FEMOJI[code] || '';
-        if(em){
-          const span = clonedDoc.createElement('span');
-          span.textContent = em;
-          span.style.cssText = `font-size:${img.width||20}px;line-height:1;vertical-align:middle;display:inline-block;`;
-          img.parentNode.replaceChild(span, img);
-        }
-      });
-
-      // Add watermark
-      const wm = clonedDoc.createElement('div');
-      wm.style.cssText = 'text-align:center;padding:12px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:#5a8a6a;background:#0a1a10;';
-      wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
-      clonedEl.appendChild(wm);
-    }
   }).then(canvas => {
+    el.removeChild(wm);
     const link = document.createElement('a');
     const tabName = activeId.replace('page-','');
     link.download = `korasim-wc2026-${tabName}.png`;
@@ -1711,11 +1696,11 @@ function downloadImage(){
     btn.textContent = origText;
     btn.disabled = false;
     toast(T[LANG].imgDone || '📸 Downloaded!');
-  }).catch(err => {
-    console.error(err);
+  }).catch(()=>{
+    el.removeChild(wm);
     btn.textContent = origText;
     btn.disabled = false;
-    toast('Error — try again');
+    toast('Error');
   });
 }
 
