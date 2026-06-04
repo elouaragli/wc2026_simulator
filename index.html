@@ -161,9 +161,9 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
   <h1 id="h-title">KORASIM — FIFA WORLD CUP 2026</h1>
   <p id="h-sub">Simulate · Predict · Share</p>
   <div class="lang-bar">
-    <button class="lang-btn" data-l="en" onclick="setLang('en')"><img src="https://flagcdn.com/w20/gb.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="EN"> EN</button>
-    <button class="lang-btn" data-l="fr" onclick="setLang('fr')"><img src="https://flagcdn.com/w20/fr.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="FR"> FR</button>
-    <button class="lang-btn" data-l="ar" onclick="setLang('ar')"><img src="https://flagcdn.com/w20/sa.png" width="20" height="14" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="AR"> AR</button>
+    <button class="lang-btn" data-l="en" onclick="setLang('en')"><img src="https://flagcdn.com/w40/gb.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="EN"> EN</button>
+    <button class="lang-btn" data-l="fr" onclick="setLang('fr')"><img src="https://flagcdn.com/w40/fr.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="FR"> FR</button>
+    <button class="lang-btn" data-l="ar" onclick="setLang('ar')"><img src="https://flagcdn.com/w40/sa.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="AR"> AR</button>
   </div>
 </div>
 <div class="tabs">
@@ -306,10 +306,10 @@ const FURL={
 };
 
 function flagImg(code,size){
-  const s=size||20;
-  const h=Math.round(s*0.7);
+  const s=size||24;
+  const h=Math.round(s*0.67);
   const iso=FURL[code]||code.toLowerCase();
-  return `<img src="https://flagcdn.com/w${s*2}/${iso}.png" width="${s}" height="${h}" style="border-radius:2px;flex-shrink:0;vertical-align:middle;object-fit:cover;display:inline-block;" alt="${code}" loading="lazy">`;
+  return `<img src="https://flagcdn.com/w${s*2}/${iso}.png" width="${s}" height="${h}" style="border-radius:3px;flex-shrink:0;vertical-align:middle;object-fit:cover;display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.4);" alt="${code}" loading="lazy">`;
 }
 
 const GD=[
@@ -430,7 +430,7 @@ function renderBest3rds(){
     const diffColor=s.gd>0?'var(--green)':s.gd<0?'var(--red)':'var(--text)';
     tr.innerHTML=`
       <td style="font-weight:700;color:${isQ?'var(--green)':'var(--muted)'}">${i+1}</td>
-      <td class="tl">${flagImg(s.code,18)}</td>
+      <td class="tl">${flagImg(s.code,22)}</td>
       <td class="tl" style="padding-left:4px">${tn(s.code)}</td>
       <td style="font-weight:600;color:var(--gold)">${s.groupId}</td>
       <td>${s.gp}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td>
@@ -446,8 +446,16 @@ function propagate(){
   R32P.forEach(([g1,r1,g2,r2,loc],i)=>{
     const nt1=getQ(g1,r1),nt2=getQ(g2,r2);
     const m=BK.r32[i];
-    if(!teq(m.t1,nt1)||!teq(m.t2,nt2))
-      BK.r32[i]={t1:nt1,t2:nt2,winner:null,s1:'',s2:'',loc};
+    // Only reset if team CODE changed (not just name translation)
+    const c1changed=!teq(m.t1,nt1), c2changed=!teq(m.t2,nt2);
+    if(c1changed||c2changed){
+      BK.r32[i]={t1:nt1,t2:nt2,winner:null,s1:m.s1,s2:m.s2,loc};
+    } else {
+      // Update name only (language change) — keep winner/scores
+      if(nt1)BK.r32[i].t1=nt1;
+      if(nt2)BK.r32[i].t2=nt2;
+      BK.r32[i].loc=loc;
+    }
   });
   for(let i=0;i<8;i++)upd(BK.r16,i,win(BK.r32[i*2]),win(BK.r32[i*2+1]));
   for(let i=0;i<4;i++)upd(BK.qf,i,win(BK.r16[i*2]),win(BK.r16[i*2+1]));
@@ -456,12 +464,19 @@ function propagate(){
   const sf1l=los(BK.sf[0]),sf2l=los(BK.sf[1]);
   if(!teq(BK.fin[0].t1,sf1w)||!teq(BK.fin[0].t2,sf2w))
     BK.fin[0]={...BK.fin[0],t1:sf1w,t2:sf2w,winner:null,s1:'',s2:''};
+  else{if(sf1w)BK.fin[0].t1=sf1w;if(sf2w)BK.fin[0].t2=sf2w;}
   if(!teq(BK.tp[0].t1,sf1l)||!teq(BK.tp[0].t2,sf2l))
     BK.tp[0]={...BK.tp[0],t1:sf1l,t2:sf2l,winner:null,s1:'',s2:''};
+  else{if(sf1l)BK.tp[0].t1=sf1l;if(sf2l)BK.tp[0].t2=sf2l;}
 }
 function upd(arr,i,nt1,nt2){
   const m=arr[i];
-  if(!teq(m.t1,nt1)||!teq(m.t2,nt2))arr[i]={...m,t1:nt1,t2:nt2,winner:null,s1:'',s2:''};
+  if(!teq(m.t1,nt1)||!teq(m.t2,nt2)){
+    arr[i]={...m,t1:nt1,t2:nt2,winner:null,s1:'',s2:''};
+  } else {
+    if(nt1)arr[i].t1=nt1;
+    if(nt2)arr[i].t2=nt2;
+  }
 }
 function win(m){if(!m)return null;if(m.winner===0)return m.t1;if(m.winner===1)return m.t2;return null;}
 function los(m){if(!m)return null;if(m.winner===0)return m.t2;if(m.winner===1)return m.t1;return null;}
@@ -560,7 +575,7 @@ function patchStandings(gid){
       <td class="tl" colspan="2">
         <div class="team-cell">
           <span style="font-weight:700;color:${posColor};font-size:11px;min-width:14px">${pos+1}</span>
-          ${flagImg(s.code,18)}
+          ${flagImg(s.code,24)}
           <span class="tn">${tn(s.code)}</span>
           ${s.code==='MA'?'<span style="color:var(--red);font-size:10px">★</span>':''}
           ${badge}
@@ -576,8 +591,8 @@ function patchStandings(gid){
     const ta=g.teams[ai],tb=g.teams[bi];
     const m1=document.getElementById(`mt1-${gid}-${mi}`);
     const m2=document.getElementById(`mt2-${gid}-${mi}`);
-    if(m1)m1.innerHTML=`${flagImg(ta,16)}<div class="cc">${ta}</div><span class="tn">${tn(ta)}</span>`;
-    if(m2)m2.innerHTML=`<span class="tn">${tn(tb)}</span><div class="cc">${tb}</div>${flagImg(tb,16)}`;
+    if(m1)m1.innerHTML=`${flagImg(ta,22)}<div class="cc">${ta}</div><span class="tn">${tn(ta)}</span>`;
+    if(m2)m2.innerHTML=`<span class="tn">${tn(tb)}</span><div class="cc">${tb}</div>${flagImg(tb,22)}`;
   });
 }
 
@@ -678,7 +693,7 @@ function mkBM(rk,idx,m){
     if(!tm){bt.className='bt tbd';bt.innerHTML=`<span>${t.tbd}</span>`;}
     else{
       bt.className='bt'+(isSel?' sel'+(isMar?' mar':''):'');
-      bt.innerHTML=`${flagImg(tm.code,16)}<span style="flex:1">${tm.n}</span>${isSel?'<span style="color:var(--green);font-size:9px">✓</span>':''}`;
+      bt.innerHTML=`${flagImg(tm.code,20)}<span style="flex:1">${tm.n}</span>${isSel?'<span style="color:var(--green);font-size:9px">✓</span>':''}`;
       bt.onclick=()=>{BK[rk][idx].winner=BK[rk][idx].winner===side?null:side;propagate();renderBracket();};
     }
     div.appendChild(bt);
@@ -701,10 +716,10 @@ function mkFinalCard(){
     <div class="ftitle">${t.final}</div>
     <div class="fvenue">${t.venue}</div>
     <div class="fteams">
-      <div class="fside">${t1?`<div style="margin-bottom:4px">${flagImg(t1.code,28)}</div>`:'<div style="font-size:26px;margin-bottom:4px">❓</div>'}
+      <div class="fside">${t1?`<div style="margin-bottom:4px">${flagImg(t1.code,36)}</div>`:'<div style="font-size:32px;margin-bottom:4px">❓</div>'}
         <div class="fname" style="${m.winner===0?'color:var(--green);':''}${isMar1?'color:#ff9aaa;':''}">${t1?t1.n:'?'}</div></div>
       <span class="fvs">VS</span>
-      <div class="fside">${t2?`<div style="margin-bottom:4px">${flagImg(t2.code,28)}</div>`:'<div style="font-size:26px;margin-bottom:4px">❓</div>'}
+      <div class="fside">${t2?`<div style="margin-bottom:4px">${flagImg(t2.code,36)}</div>`:'<div style="font-size:32px;margin-bottom:4px">❓</div>'}
         <div class="fname" style="${m.winner===1?'color:var(--green);':''}${isMar2?'color:#ff9aaa;':''}">${t2?t2.n:'?'}</div></div>
     </div>
     <div class="fscrow">
@@ -731,10 +746,10 @@ function mkTPCard(){
     <div class="tplabel">${t.third}</div>
     <div class="tpvenue">${t.thirdVenue}</div>
     <div class="tpteams">
-      <div class="tpside">${t1?`<div>${flagImg(t1.code,20)}</div>`:'<span style="font-size:16px">❓</span>'}
+      <div class="tpside">${t1?`<div style="margin-bottom:2px">${flagImg(t1.code,26)}</div>`:'<span style="font-size:20px">❓</span>'}
         <div class="tpname" style="${m.winner===0?'color:var(--green);font-weight:700':''}">${t1?t1.n:'?'}</div></div>
       <span class="tpvs">VS</span>
-      <div class="tpside">${t2?`<div>${flagImg(t2.code,20)}</div>`:'<span style="font-size:16px">❓</span>'}
+      <div class="tpside">${t2?`<div style="margin-bottom:2px">${flagImg(t2.code,26)}</div>`:'<span style="font-size:20px">❓</span>'}
         <div class="tpname" style="${m.winner===1?'color:var(--green);font-weight:700':''}">${t2?t2.n:'?'}</div></div>
     </div>
     <div class="tpsc">
