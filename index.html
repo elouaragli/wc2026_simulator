@@ -306,6 +306,7 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
 <div class="abar">
   <button class="abtn p" onclick="saveData()" id="btn-save">💾 Save</button>
   <button class="abtn" onclick="shareLink()" id="btn-share">🔗 Share</button>
+  <button class="abtn" onclick="downloadImage()" id="btn-img" style="border-color:var(--gold);color:var(--gold);">📸 Image</button>
   <button class="abtn" onclick="resetAll()" id="btn-reset">🔄 Reset</button>
 </div>
 <div class="toast" id="toast"></div>
@@ -320,7 +321,7 @@ const T={
     hint:'⚽ Enter scores for auto-ranking · Drag ☰ to rank manually',
     bhint:'👆 Click a team to advance · Updates automatically',
     matches:'Matches',dragMode:'Manual',
-    save:'💾 Save',share:'🔗 Share',reset:'🔄 Reset',
+    save:'💾 Save',share:'🔗 Share',reset:'🔄 Reset',img:'📸 Image',
     saved:'✅ Saved!',copied:'🔗 Copied!',resetDone:'🔄 Reset',
     final:'🏆 GRAND FINAL',venue:'MetLife Stadium · July 19, 2026',
     third:'🥉 3rd Place',thirdVenue:'Miami · July 16, 2026',
@@ -337,7 +338,7 @@ const T={
     hint:"⚽ Saisis les scores pour classer auto · Glisse ☰ pour classer manuellement",
     bhint:"👆 Clique sur une équipe pour l'avancer · Tableau mis à jour automatiquement",
     matches:'Matchs',dragMode:'Manuel',
-    save:'💾 Sauvegarder',share:'🔗 Partager',reset:'🔄 Réinitialiser',
+    save:'💾 Sauvegarder',share:'🔗 Partager',reset:'🔄 Réinitialiser',img:'📸 Image',
     saved:'✅ Sauvegardé!',copied:'🔗 Lien copié!',resetDone:'🔄 Réinitialisé',
     final:'🏆 GRANDE FINALE',venue:'MetLife Stadium · 19 juillet 2026',
     third:'🥉 3e Place',thirdVenue:'Miami · 16 juillet 2026',
@@ -354,7 +355,7 @@ const T={
     hint:'⚽ أدخل النتائج للترتيب التلقائي · اسحب ☰ للترتيب اليدوي',
     bhint:'👆 انقر على فريق للتأهيل · يتحدث الجدول تلقائياً',
     matches:'المباريات',dragMode:'يدوي',
-    save:'💾 حفظ',share:'🔗 مشاركة',reset:'🔄 إعادة',
+    save:'💾 حفظ',share:'🔗 مشاركة',reset:'🔄 إعادة',img:'📸 صورة',
     saved:'✅ تم الحفظ!',copied:'🔗 تم نسخ الرابط!',resetDone:'🔄 تمت إعادة الضبط',
     final:'🏆 النهائي الكبير',venue:'ملعب ميتلايف · 19 يوليو 2026',
     third:'🥉 المركز الثالث',thirdVenue:'ميامي · 16 يوليو 2026',
@@ -1255,7 +1256,7 @@ function updateUI(){
   s('lbl-groups',t.groups);s('lbl-bracket',t.bracket);
   s('lbl-q1',t.q1);s('lbl-q2',t.q2);s('lbl-q3',t.q3);
   s('lbl-hint',t.hint);s('lbl-bhint',t.bhint);
-  s('btn-save',t.save);s('btn-share',t.share);s('btn-reset',t.reset);
+  s('btn-save',t.save);s('btn-share',t.share);s('btn-reset',t.reset);s('btn-img',t.img||'📸 Image');
   s('fnote',t.note);
   document.title='KoraSim — '+t.title;
 }
@@ -1662,12 +1663,67 @@ function resetAll(){
   toast(T[LANG].resetDone);
 }
 
+function downloadImage(){
+  const activeId = document.querySelector('.page.active')?.id;
+  if(!activeId) return;
+  const el = document.getElementById(activeId);
+  if(!el) return;
+
+  const btn = document.getElementById('btn-img');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ ...';
+  btn.disabled = true;
+
+  html2canvas(el, {
+    backgroundColor: '#0a1a10',
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    logging: false,
+    imageTimeout: 15000,
+    onclone: (clonedDoc) => {
+      const clonedEl = clonedDoc.getElementById(activeId);
+
+      // Replace all flag <img> with emoji spans
+      clonedEl.querySelectorAll('img[alt]').forEach(img => {
+        const code = img.alt;
+        const em = FEMOJI[code] || '';
+        if(em){
+          const span = clonedDoc.createElement('span');
+          span.textContent = em;
+          span.style.cssText = `font-size:${img.width||20}px;line-height:1;vertical-align:middle;display:inline-block;`;
+          img.parentNode.replaceChild(span, img);
+        }
+      });
+
+      // Add watermark
+      const wm = clonedDoc.createElement('div');
+      wm.style.cssText = 'text-align:center;padding:12px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:#5a8a6a;background:#0a1a10;';
+      wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
+      clonedEl.appendChild(wm);
+    }
+  }).then(canvas => {
+    const link = document.createElement('a');
+    const tabName = activeId.replace('page-','');
+    link.download = `korasim-wc2026-${tabName}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = origText;
+    btn.disabled = false;
+    toast(T[LANG].imgDone || '📸 Downloaded!');
+  }).catch(err => {
+    console.error(err);
+    btn.textContent = origText;
+    btn.disabled = false;
+    toast('Error — try again');
+  });
+}
+
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
-LANG=detectLang();
 initSC();initBK();
 loadSaved();loadFromUrl();
 setLang(LANG);
@@ -1685,3 +1741,5 @@ if(window._startTab && window._startTab !== 'groups'){
 </script>
 </body>
 </html>
+<!-- html2canvas for screenshot -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
