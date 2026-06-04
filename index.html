@@ -330,7 +330,7 @@ const T={
     best3:'Best 3rd-Place Teams',best3hint:'👆 Click a row to qualify / disqualify · 🤖 Auto · ✏️ Manual',max8:'Maximum 8 teams already selected',resetAuto:'Reset to auto ranking',
     rank:'Rank',team:'Team',group:'Group',
     note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable',
-    chooseTeam:'Choose your team',noFav:'No favourite'},
+    chooseTeam:'Choose your team',noFav:'No favourite',podiumTitle:'WORLD CUP 2026 PODIUM'},
   fr:{title:'KORASIM — COUPE DU MONDE FIFA 2026',sub:'Simuler · Prédire · Partager',
     tabG:'📋 Groupes',tabB:'🏆 Tableau',groups:'Phase de Groupes',bracket:'Tableau Final',
     q1:'1er qualifié',q2:'2e qualifié',q3:'Possible 3e',
@@ -347,7 +347,7 @@ const T={
     best3:'Meilleurs 3es',best3hint:"👆 Clique pour qualifier/disqualifier · 🤖 Auto · ✏️ Manuel",max8:'Maximum 8 équipes déjà sélectionnées',resetAuto:'Revenir au classement auto',
     rank:'Rang',team:'Équipe',group:'Groupe',
     note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable',
-    chooseTeam:'Choisir votre équipe',noFav:'Aucune équipe favorite'},
+    chooseTeam:'Choisir votre équipe',noFav:'Aucune équipe favorite',podiumTitle:'PODIUM COUPE DU MONDE 2026'},
   ar:{title:'كوراسيم — كأس العالم FIFA 2026',sub:'محاكاة · تنبؤ · مشاركة',
     tabG:'📋 المجموعات',tabB:'🏆 الجدول',groups:'مرحلة المجموعات',bracket:'مرحلة الإقصاء',
     q1:'المتأهل الأول',q2:'المتأهل الثاني',q3:'ثالث محتمل',
@@ -364,7 +364,7 @@ const T={
     best3:'أفضل الفرق الثالثة',best3hint:'👆 انقر للتأهيل أو الإقصاء · 🤖 تلقائي · ✏️ يدوي',max8:'تم اختيار 8 فرق بالفعل',resetAuto:'إعادة الترتيب التلقائي',
     rank:'الترتيب',team:'الفريق',group:'المجموعة',
     note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة',
-    chooseTeam:'اختر فريقك',noFav:'بدون فريق مفضل'},
+    chooseTeam:'اختر فريقك',noFav:'بدون فريق مفضل',podiumTitle:'منصة التتويج كأس العالم 2026'},
 };
 
 // ══════ TEAM DATA ══════
@@ -1078,56 +1078,109 @@ function mkFinalCard(){
   const t1=m.t1,t2=m.t2,w=win(m);
   const isMar1=t1&&t1.code===FAV,isMar2=t2&&t2.code===FAV,isMarW=w&&w.code===FAV;
   const div=document.createElement('div');div.className='fcard';
+
+  const teamHtml=(side,team,isMar)=>{
+    if(!team) return `<div style="font-size:32px;margin-bottom:4px">❓</div><div class="fname" style="color:var(--muted)">?</div>`;
+    const isSel=m.winner===side;
+    const clr=isSel?(isMar?'#ff9aaa':'var(--green)'):'var(--text)';
+    const bg=isSel?(isMar?'rgba(200,16,46,.15)':'rgba(29,185,84,.15)'):'transparent';
+    return `<div onclick="pickW('fin',0,${side})" 
+      style="cursor:pointer;padding:8px;border-radius:8px;background:${bg};border:${isSel?'1px solid '+(isMar?'var(--red)':'var(--green)'):'1px solid transparent'};transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px;"
+      title="Click to select winner">
+      <div style="margin-bottom:2px">${flagImg(team.code,40)}</div>
+      <div class="fname" style="color:${clr};font-size:13px">${team.n}</div>
+      ${isSel?`<span style="font-size:14px">${isMar?'⭐':'✓'}</span>`:''}
+    </div>`;
+  };
+
   div.innerHTML=`
     <div class="ftitle">${t.final}</div>
     <div class="fvenue">${t.venue}</div>
+    <p style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:6px">👆 ${t.clickTeam||'Click a team to select winner'}</p>
     <div class="fteams">
-      <div class="fside">${t1?`<div style="margin-bottom:4px">${flagImg(t1.code,36)}</div>`:'<div style="font-size:32px;margin-bottom:4px">❓</div>'}
-        <div class="fname" style="${m.winner===0?'color:var(--green);':''}${isMar1?'color:#ff9aaa;':''}">${t1?t1.n:'?'}</div></div>
+      <div class="fside" id="fin-t1">${teamHtml(0,t1,isMar1)}</div>
       <span class="fvs">VS</span>
-      <div class="fside">${t2?`<div style="margin-bottom:4px">${flagImg(t2.code,36)}</div>`:'<div style="font-size:32px;margin-bottom:4px">❓</div>'}
-        <div class="fname" style="${m.winner===1?'color:var(--green);':''}${isMar2?'color:#ff9aaa;':''}">${t2?t2.n:'?'}</div></div>
+      <div class="fside" id="fin-t2">${teamHtml(1,t2,isMar2)}</div>
     </div>
     <div class="fscrow">
       <input class="fsi ${m.winner===0?'wsi':''}" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="fin" data-i="0" data-s="0">
       <span style="font-family:'Bebas Neue';font-size:16px;color:var(--muted)">—</span>
       <input class="fsi ${m.winner===1?'wsi':''}" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="fin" data-i="0" data-s="1">
     </div>
-    <div class="fbtns">
-      <button class="fbtn ${m.winner===0?(isMar1?'actmar':'active'):''}" onclick="pickW('fin',0,0)">${t1?t1.n:'?'} ${t.winBtn}</button>
-      <button class="fbtn ${m.winner===1?(isMar2?'actmar':'active'):''}" onclick="pickW('fin',0,1)">${t2?t2.n:'?'} ${t.winBtn}</button>
-    </div>
     <div class="champion-box">
       ${w?`<div class="champ-tag" style="background:${isMarW?'var(--red)':'var(--green2)'};color:#fff;">${w.n.toUpperCase()} ${t.champion} 🏆</div>`
-         :`<div style="font-size:10px;color:var(--muted)">${t.clickTeam}</div>`}
+         :`<div style="font-size:10px;color:var(--muted)">${t.clickTeam||'Click a team above ↑'}</div>`}
     </div>`;
+
+  // Wire up score inputs to auto-select winner
+  div.querySelectorAll('.fsi').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const s0=parseInt(div.querySelectorAll('.fsi')[0].value);
+      const s1=parseInt(div.querySelectorAll('.fsi')[1].value);
+      if(!isNaN(s0)&&!isNaN(s1)&&s0!==s1){
+        BK.fin[0].winner = s0>s1 ? 0 : 1;
+      }
+      propagate();
+      renderFinalPage();
+    });
+    inp.addEventListener('click',e=>e.stopPropagation());
+  });
+
   return div;
 }
 
 function mkTPCard(){
   const t=T[LANG],m=BK.tp[0];
   const t1=m.t1,t2=m.t2,w=win(m);
+  const isFav1=t1&&t1.code===FAV, isFav2=t2&&t2.code===FAV;
   const div=document.createElement('div');div.className='tpcard';
+
+  const teamHtml=(side,team,isFav)=>{
+    if(!team) return `<div class="tpside"><span style="font-size:20px">❓</span><div class="tpname">?</div></div>`;
+    const isSel=m.winner===side;
+    const clr=isSel?(isFav?'#ff9aaa':'var(--green)'):'var(--text)';
+    const bg=isSel?(isFav?'rgba(200,16,46,.15)':'rgba(29,185,84,.12)'):'transparent';
+    const border=isSel?'1px solid '+(isFav?'var(--red)':'var(--green)'):'1px solid transparent';
+    return `<div class="tpside" onclick="pickW('tp',0,${side})"
+      style="cursor:pointer;padding:8px;border-radius:8px;background:${bg};border:${border};transition:all .15s;">
+      <div style="margin-bottom:2px">${flagImg(team.code,28)}</div>
+      <div class="tpname" style="color:${clr};font-weight:${isSel?'700':'400'}">${team.n}</div>
+      ${isSel?`<div style="font-size:13px">${isFav?'⭐':'✓'}</div>`:''}
+    </div>`;
+  };
+
   div.innerHTML=`
     <div class="tplabel">${t.third}</div>
     <div class="tpvenue">${t.thirdVenue}</div>
+    <p style="font-size:9px;color:var(--muted);text-align:center;margin-bottom:4px">👆 ${t.clickTeam||'Click to select'}</p>
     <div class="tpteams">
-      <div class="tpside">${t1?`<div style="margin-bottom:2px">${flagImg(t1.code,26)}</div>`:'<span style="font-size:20px">❓</span>'}
-        <div class="tpname" style="${m.winner===0?'color:var(--green);font-weight:700':''}">${t1?t1.n:'?'}</div></div>
+      ${teamHtml(0,t1,isFav1)}
       <span class="tpvs">VS</span>
-      <div class="tpside">${t2?`<div style="margin-bottom:2px">${flagImg(t2.code,26)}</div>`:'<span style="font-size:20px">❓</span>'}
-        <div class="tpname" style="${m.winner===1?'color:var(--green);font-weight:700':''}">${t2?t2.n:'?'}</div></div>
+      ${teamHtml(1,t2,isFav2)}
     </div>
     <div class="tpsc">
-      <input class="tpsi" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="tp" data-i="0" data-s="0">
+      <input class="tpsi ${m.winner===0?'wsi':''}" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="tp" data-i="0" data-s="0">
       <span class="ssep">—</span>
-      <input class="tpsi" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="tp" data-i="0" data-s="1">
+      <input class="tpsi ${m.winner===1?'wsi':''}" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="tp" data-i="0" data-s="1">
     </div>
-    <div class="tpbtns">
-      <button class="tpbtn ${m.winner===0?'active':''}" onclick="pickW('tp',0,0)">${t1?t1.n:'?'}</button>
-      <button class="tpbtn ${m.winner===1?'active':''}" onclick="pickW('tp',0,1)">${t2?t2.n:'?'}</button>
-    </div>
-    ${w?`<div style="margin-top:4px;font-size:11px;color:var(--gold);font-weight:700">${w.n} 🥉</div>`:''}`;
+    ${w?`<div style="margin-top:6px;font-size:12px;color:var(--gold);font-weight:700;text-align:center">${w.n} 🥉</div>`:''}`;
+
+  // Score auto-selects winner
+  div.querySelectorAll('.tpsi').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const inputs=div.querySelectorAll('.tpsi');
+      const s0=parseInt(inputs[0].value), s1=parseInt(inputs[1].value);
+      if(!isNaN(s0)&&!isNaN(s1)&&s0!==s1){
+        BK.tp[0].winner = s0>s1?0:1;
+        BK.tp[0].s1=inputs[0].value;
+        BK.tp[0].s2=inputs[1].value;
+      }
+      propagate();
+      if(document.getElementById('page-final').classList.contains('active')) renderFinalPage();
+    });
+    inp.addEventListener('click',e=>e.stopPropagation());
+  });
+
   return div;
 }
 
@@ -1148,7 +1201,10 @@ function pickW(rk,i,side){
   const tm=side===0?ref[i].t1:ref[i].t2;
   if(!tm)return;
   ref[i].winner=ref[i].winner===side?null:side;
-  propagate();renderBracket();
+  propagate();
+  if(document.getElementById('page-final').classList.contains('active')) renderFinalPage();
+  else if(document.getElementById('page-bracket').classList.contains('active')) renderBracket();
+  else renderBracket();
 }
 
 // ══════ LANGUAGE ══════
@@ -1382,17 +1438,77 @@ function renderFinalPage(){
   if(!grid) return;
   propagate();
   grid.innerHTML='';
+
   // Final card
   const fc = document.createElement('div');
-  fc.style.cssText='min-width:300px;max-width:400px;flex:1;';
+  fc.style.cssText='min-width:300px;max-width:420px;flex:1;';
   fc.appendChild(mkFinalCard());
   grid.appendChild(fc);
+
   // 3rd place
   const tc = document.createElement('div');
   tc.style.cssText='min-width:280px;max-width:380px;flex:1;';
   tc.appendChild(mkTPCard());
   grid.appendChild(tc);
+
   attachBKInputs();
+
+  // Remove old podium if exists
+  const oldPodium = document.getElementById('podium-section');
+  if(oldPodium) oldPodium.remove();
+
+  // Podium
+  const podium = buildPodium();
+  grid.insertAdjacentHTML('afterend', podium);
+}
+
+function buildPodium(){
+  const w1 = win(BK.fin[0]);   // Champion
+  const w2 = win(BK.fin[0])===BK.fin[0].t1 ? BK.fin[0].t2 : BK.fin[0].t1; // Finalist
+  const w3 = win(BK.tp[0]);    // 3rd place
+  const t = T[LANG];
+
+  const podiumLabels = {
+    en: ['🥇 World Champion','🥈 Runner-up','🥉 3rd Place'],
+    fr: ['🥇 Champion du Monde','🥈 Finaliste','🥉 3e Place'],
+    ar: ['🥇 بطل العالم','🥈 المتأهل للنهائي','🥉 المركز الثالث'],
+  };
+  const labels = podiumLabels[LANG] || podiumLabels.en;
+
+  const teamCard = (team, label, height, trophy) => {
+    if(!team) return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="height:${height}px;width:90px;background:var(--card2);border:1px solid var(--border);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--muted)">❓</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center">${label}</div>
+      </div>`;
+    const isFav = team.code === FAV;
+    const borderColor = isFav ? 'var(--red)' : label.includes('🥇') ? 'var(--gold)' : 'var(--border)';
+    const bgColor = label.includes('🥇') ? 'rgba(201,168,76,.15)' : isFav ? 'rgba(200,16,46,.1)' : 'var(--card2)';
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        ${trophy ? '<div style="font-size:36px;animation:pulse 2s ease-in-out infinite">🏆</div>' : ''}
+        <div style="height:${height}px;width:90px;background:${bgColor};border:2px solid ${borderColor};border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+          ${flagImg(team.code, 32)}
+          <div style="font-size:10px;font-weight:700;color:${isFav?'#ff9aaa':'var(--text)'};text-align:center;padding:0 4px">${team.n}</div>
+        </div>
+        <div style="font-size:11px;color:${label.includes('🥇')?'var(--gold)':'var(--muted)'};text-align:center;font-weight:${label.includes('🥇')?'700':'400'}">${label}</div>
+      </div>`;
+  };
+
+  const anyResult = w1||w2||w3;
+  if(!anyResult) return '';
+
+  return `
+    <div id="podium-section" style="width:100%;margin-top:24px;padding:20px;background:linear-gradient(180deg,rgba(201,168,76,.05),transparent);border-top:1px solid var(--border);border-radius:12px;">
+      <div style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:.1em;color:var(--gold);text-align:center;margin-bottom:20px;">
+        🏆 ${t.podiumTitle||'WORLD CUP 2026 PODIUM'}
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:12px;">
+        ${teamCard(w2, labels[1], 110, false)}
+        ${teamCard(w1, labels[0], 150, true)}
+        ${teamCard(w3, labels[2], 80, false)}
+      </div>
+    </div>`;
 }
 
 // ══════ UPDATE TAB LABELS ══════
