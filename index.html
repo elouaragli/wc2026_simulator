@@ -161,9 +161,15 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
   <h1 id="h-title">KORASIM — FIFA WORLD CUP 2026</h1>
   <p id="h-sub">Simulate · Predict · Share</p>
   <div class="lang-bar">
-    <button class="lang-btn" data-l="en" onclick="setLang('en')"><img src="https://flagcdn.com/w40/gb.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="EN"> EN</button>
-    <button class="lang-btn" data-l="fr" onclick="setLang('fr')"><img src="https://flagcdn.com/w40/fr.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="FR"> FR</button>
-    <button class="lang-btn" data-l="ar" onclick="setLang('ar')"><img src="https://flagcdn.com/w40/sa.png" width="22" height="15" style="border-radius:2px;vertical-align:middle;margin-right:4px" alt="AR"> AR</button>
+    <button class="lang-btn" data-l="en" onclick="setLang('en')">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1ec-1f1e7.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/gb.png';this.onerror=null;"> EN
+    </button>
+    <button class="lang-btn" data-l="fr" onclick="setLang('fr')">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1eb-1f1f7.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/fr.png';this.onerror=null;"> FR
+    </button>
+    <button class="lang-btn" data-l="ar" onclick="setLang('ar')">
+      <img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f1f8-1f1e6.svg" width="20" height="20" style="vertical-align:middle;margin-right:4px;border-radius:2px" onerror="this.src='https://flagcdn.com/w40/sa.png';this.onerror=null;"> AR
+    </button>
   </div>
 </div>
 <div class="tabs">
@@ -294,8 +300,18 @@ const TNAMES={
   PA:{en:'Panama',fr:'Panama',ar:'بنما'},GH:{en:'Ghana',fr:'Ghana',ar:'غانا'},
 };
 
-// Always use flagcdn.com images — works on ALL platforms including Windows
-// flagcdn is a free, reliable CDN specifically for flag images
+// Unicode emoji flags via twemoji CDN — works on ALL platforms including Windows
+// Uses Twitter's emoji rendering which works everywhere
+const FEMOJI={
+  MX:'🇲🇽',KR:'🇰🇷',ZA:'🇿🇦',CZ:'🇨🇿',CA:'🇨🇦',CH:'🇨🇭',QA:'🇶🇦',BA:'🇧🇦',
+  BR:'🇧🇷',MA:'🇲🇦',SC:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',HT:'🇭🇹',US:'🇺🇸',AU:'🇦🇺',PY:'🇵🇾',TR:'🇹🇷',
+  DE:'🇩🇪',EC:'🇪🇨',CI:'🇨🇮',CW:'🇨🇼',NL:'🇳🇱',JP:'🇯🇵',TN:'🇹🇳',SE:'🇸🇪',
+  BE:'🇧🇪',IR:'🇮🇷',EG:'🇪🇬',NZ:'🇳🇿',ES:'🇪🇸',UY:'🇺🇾',SA:'🇸🇦',CV:'🇨🇻',
+  FR:'🇫🇷',SN:'🇸🇳',NO:'🇳🇴',IQ:'🇮🇶',AR:'🇦🇷',AT:'🇦🇹',DZ:'🇩🇿',JO:'🇯🇴',
+  PT:'🇵🇹',CO:'🇨🇴',UZ:'🇺🇿',CD:'🇨🇩',EN:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',HR:'🇭🇷',PA:'🇵🇦',GH:'🇬🇭',
+};
+
+// flagcdn for Windows fallback
 const FURL={
   MX:'mx',KR:'kr',ZA:'za',CZ:'cz',CA:'ca',CH:'ch',QA:'qa',BA:'ba',
   BR:'br',MA:'ma',SC:'gb-sct',HT:'ht',US:'us',AU:'au',PY:'py',TR:'tr',
@@ -305,11 +321,28 @@ const FURL={
   PT:'pt',CO:'co',UZ:'uz',CD:'cd',EN:'gb-eng',HR:'hr',PA:'pa',GH:'gh',
 };
 
-function flagImg(code,size){
-  const s=size||24;
-  const h=Math.round(s*0.67);
-  const iso=FURL[code]||code.toLowerCase();
-  return `<img src="https://flagcdn.com/w${s*2}/${iso}.png" width="${s}" height="${h}" style="border-radius:3px;flex-shrink:0;vertical-align:middle;object-fit:cover;display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.4);" alt="${code}" loading="lazy">`;
+function flagImg(code, size){
+  const s = size || 24;
+  const em = FEMOJI[code] || '🏳️';
+  const iso = FURL[code] || code.toLowerCase();
+  const h = Math.round(s * 0.67);
+  // Use twemoji img for cross-platform support
+  return `<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${twemojiCode(em)}.svg"
+    width="${s}" height="${s}"
+    style="border-radius:3px;flex-shrink:0;vertical-align:middle;display:inline-block;"
+    alt="${em}" loading="lazy"
+    onerror="this.src='https://flagcdn.com/w${s*2}/${iso}.png';this.onerror=null;">`;
+}
+
+function twemojiCode(emoji){
+  // Convert emoji to twemoji file code
+  const pts = [];
+  for(let i = 0; i < emoji.length; ){
+    const cp = emoji.codePointAt(i);
+    if(cp !== 0xFE0F) pts.push(cp.toString(16));
+    i += cp > 0xFFFF ? 2 : 1;
+  }
+  return pts.join('-');
 }
 
 const GD=[
