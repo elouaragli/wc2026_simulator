@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA World Cup 2026 — Simulateur</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a1a10;--bg2:#0d2015;--bg3:#071510;--card:#0f2a18;--card2:#132e1c;
+  --green:#2dba60;--green2:#1db954;--gold:#c9a84c;
+  --red:#c8102e;--text:#d8edd8;--muted:#5a8a6a;--border:#1a3d25;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;}
+
+.header{text-align:center;padding:22px 16px 14px;border-bottom:1px solid var(--border);}
+.header h1{font-family:'Bebas Neue',cursive;font-size:clamp(18px,5vw,32px);letter-spacing:.14em;}
+.header p{font-size:11px;color:var(--muted);margin-top:3px;}
+
+.tabs{display:flex;justify-content:center;gap:4px;padding:9px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.tab{padding:6px 18px;border-radius:4px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:.08em;transition:all .15s;}
+.tab.active,.tab:hover{background:var(--green2);color:#fff;border-color:var(--green2);}
+
+.page{display:none;}.page.active{display:block;}
+.container{max-width:1280px;margin:0 auto;padding:12px 10px;}
+.sec-title{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:.1em;color:var(--green);border-left:4px solid var(--green);padding-left:10px;margin-bottom:8px;}
+.legend{display:flex;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
+.legend span{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+.ldot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hint{font-size:11px;color:var(--muted);text-align:center;padding:4px;margin-bottom:8px;}
+
+/* ── GROUP GRID ── */
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;}
+.gc{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.gc-head{background:var(--card2);padding:7px 12px;}
+.gc-head h3{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:.1em;color:var(--green);}
+
+/* standings — updated in place, no full redraw */
+.gtbl{width:100%;border-collapse:collapse;}
+.gtbl th{font-size:10px;color:var(--muted);padding:3px 5px;text-align:center;border-bottom:1px solid var(--border);}
+.gtbl th:nth-child(2){text-align:left;padding-left:8px;}
+.gtbl td{padding:3px 5px;text-align:center;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s;}
+.gtbl td:nth-child(2){text-align:left;padding-left:8px;}
+.gtbl tr.rk1 td{background:rgba(29,185,84,.15);}
+.gtbl tr.rk2 td{background:rgba(29,185,84,.07);}
+.gtbl tr.rk3 td{background:rgba(201,168,76,.06);}
+.team-cell{display:flex;align-items:center;gap:5px;}
+.cc{width:20px;height:13px;font-size:9px;background:rgba(255,255,255,.09);border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--muted);}
+.pts-col{font-weight:700;color:var(--text);}
+
+/* match rows — these are rendered ONCE and never recreated */
+.msec{padding:8px 10px;}
+.msec-title{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.mrow{display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.mrow:last-child{border:none;}
+.mt{flex:1;font-size:11px;display:flex;align-items:center;gap:3px;}
+.mt.r{justify-content:flex-end;flex-direction:row-reverse;}
+.sinp{width:28px;height:22px;background:var(--bg3);border:1px solid var(--border);color:var(--text);text-align:center;font-size:12px;font-weight:600;border-radius:3px;outline:none;transition:border-color .15s;}
+.sinp:focus{border-color:var(--green);}
+.ssep{color:var(--muted);font-size:10px;flex-shrink:0;}
+
+/* ── BRACKET ── */
+.bwrap{overflow-x:auto;padding:10px 0 16px;}
+.bracket{display:flex;align-items:flex-start;gap:2px;min-width:1050px;}
+.bround{flex:1;display:flex;flex-direction:column;padding:0 3px;}
+.brtitle{font-family:'Bebas Neue',cursive;font-size:12px;letter-spacing:.1em;color:var(--muted);text-align:center;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:7px;}
+.bslots{display:flex;flex-direction:column;gap:5px;justify-content:space-around;flex:1;}
+.bm{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 6px;}
+.bm.hamar{border-color:rgba(200,16,46,.4);background:linear-gradient(135deg,rgba(200,16,46,.07),var(--card));}
+.bt{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:3px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .12s;user-select:none;}
+.bt:hover{background:rgba(255,255,255,.05);color:var(--text);}
+.bt.sel{background:rgba(29,185,84,.2);color:var(--text);font-weight:700;}
+.bt.sel.mar{background:rgba(200,16,46,.2);color:#ff9aaa;}
+.bt.tbd{color:var(--muted);font-style:italic;cursor:default;pointer-events:none;}
+.bscrow{display:flex;align-items:center;gap:3px;padding:2px 4px 1px;}
+.bsi{width:23px;height:17px;background:var(--bg3);border:1px solid var(--border);color:var(--text);text-align:center;font-size:10px;border-radius:2px;outline:none;}
+.bsi:focus{border-color:var(--green);}
+.bsi.wsi{border-color:var(--green2);}
+.bloc{font-size:9px;color:var(--muted);flex:1;text-align:right;}
+.bpend{text-align:center;padding:10px 4px;color:var(--muted);font-size:10px;font-style:italic;}
+
+/* final col */
+.finalcol{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:145px;padding:0 2px;}
+.fcol-title{font-family:'Bebas Neue',cursive;font-size:12px;letter-spacing:.1em;color:var(--muted);text-align:center;padding:6px 0;border-bottom:1px solid var(--border);width:100%;margin-bottom:7px;}
+.trophy-ani{font-size:38px;text-align:center;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+.fcard{background:var(--card);border:2px solid var(--gold);border-radius:10px;padding:10px 8px;text-align:center;width:100%;}
+.ftitle{font-family:'Bebas Neue',cursive;font-size:13px;letter-spacing:.1em;color:var(--gold);margin-bottom:2px;}
+.fvenue{font-size:9px;color:var(--muted);margin-bottom:7px;}
+.fteams{display:flex;justify-content:space-around;align-items:center;margin-bottom:7px;gap:4px;}
+.fside{text-align:center;flex:1;}
+.fflag{font-size:24px;display:block;margin-bottom:2px;}
+.fname{font-size:10px;font-weight:600;min-height:13px;word-break:break-word;}
+.fvs{font-family:'Bebas Neue',cursive;font-size:15px;color:var(--muted);flex-shrink:0;}
+.fscrow{display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:6px;}
+.fsi{width:30px;height:24px;background:var(--bg3);border:1px solid var(--border);color:var(--text);text-align:center;font-size:15px;font-weight:700;border-radius:4px;outline:none;}
+.fsi:focus{border-color:var(--gold);}
+.fsi.wsi{border-color:var(--green2);}
+.fbtns{display:flex;gap:4px;justify-content:center;margin-bottom:7px;flex-wrap:wrap;}
+.fbtn{padding:3px 7px;font-size:10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.fbtn.active{background:var(--green2);color:#fff;border-color:var(--green2);}
+.fbtn.actmar{background:var(--red);color:#fff;border-color:var(--red);}
+.champion-box{min-height:24px;}
+.champ-tag{display:inline-block;padding:4px 8px;border-radius:3px;font-family:'Bebas Neue',cursive;font-size:12px;letter-spacing:.06em;}
+.tpcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;width:100%;}
+.tplabel{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+.tpvenue{font-size:9px;color:var(--muted);margin-bottom:5px;}
+.tpteams{display:flex;justify-content:space-around;align-items:center;margin-bottom:4px;}
+.tpside{text-align:center;flex:1;}
+.tpflag{font-size:16px;display:block;margin-bottom:1px;}
+.tpname{font-size:10px;min-height:12px;}
+.tpvs{font-family:'Bebas Neue',cursive;font-size:12px;color:var(--muted);}
+.tpsc{display:flex;align-items:center;justify-content:center;gap:3px;margin-bottom:4px;}
+.tpsi{width:22px;height:17px;background:var(--bg3);border:1px solid var(--border);color:var(--text);text-align:center;font-size:10px;border-radius:2px;outline:none;}
+.tpbtns{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;}
+.tpbtn{padding:2px 6px;font-size:10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tpbtn.active{background:var(--green2);color:#fff;border-color:var(--green2);}
+
+.abar{display:flex;justify-content:center;gap:8px;padding:12px;flex-wrap:wrap;}
+.abtn{padding:8px 18px;border:1px solid var(--green2);background:transparent;color:var(--green2);border-radius:5px;cursor:pointer;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:.08em;transition:all .2s;}
+.abtn:hover,.abtn.p{background:var(--green2);color:#fff;}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--green2);color:#fff;padding:7px 18px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;}
+.toast.show{opacity:1;}
+.fnote{font-size:11px;color:var(--muted);text-align:center;padding:12px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-size:28px;margin-bottom:4px">🏆</div>
+  <h1>FIFA WORLD CUP 2026 — SIMULATEUR</h1>
+  <p>Remplis les scores · Classement automatique · Tableau dynamique · Partage avec tes amis</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-groups" onclick="switchTab('groups')">📋 Groupes</div>
+  <div class="tab" id="tab-bracket" onclick="switchTab('bracket')">🏆 Tableau Final</div>
+</div>
+
+<div id="page-groups" class="page active">
+  <div class="container">
+    <div class="sec-title">Phase de Groupes</div>
+    <div class="legend">
+      <span><span class="ldot" style="background:rgba(29,185,84,.6)"></span>1er qualifié</span>
+      <span><span class="ldot" style="background:rgba(29,185,84,.3)"></span>2e qualifié</span>
+      <span><span class="ldot" style="background:rgba(201,168,76,.3)"></span>Possible 3e</span>
+    </div>
+    <p class="hint">⚽ Saisis les scores → le classement se met à jour sans bouger la page</p>
+    <div class="groups-grid" id="gc"></div>
+  </div>
+</div>
+
+<div id="page-bracket" class="page">
+  <div class="container">
+    <div class="sec-title">Tableau à Élimination Directe</div>
+    <p class="hint">👆 Clique sur une équipe pour la désigner vainqueur → avance automatiquement</p>
+    <div class="bwrap"><div class="bracket" id="bk"></div></div>
+  </div>
+</div>
+
+<div class="abar">
+  <button class="abtn p" onclick="saveData()">💾 Sauvegarder</button>
+  <button class="abtn" onclick="shareLink()">🔗 Partager</button>
+  <button class="abtn" onclick="resetAll()">🔄 Réinitialiser</button>
+</div>
+<div class="toast" id="toast"></div>
+<p class="fnote">🇲🇦 Simulateur Coupe du Monde 2026 — 100% dynamique</p>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const GD = [
+  {id:'A',teams:[{f:'🇲🇽',n:'Mexique',c:'MX'},{f:'🇰🇷',n:'Corée du Sud',c:'KR'},{f:'🇿🇦',n:'Afrique du Sud',c:'ZA'},{f:'🇨🇿',n:'Tchéquie',c:'CZ'}]},
+  {id:'B',teams:[{f:'🇨🇦',n:'Canada',c:'CA'},{f:'🇨🇭',n:'Suisse',c:'CH'},{f:'🇶🇦',n:'Qatar',c:'QA'},{f:'🇧🇦',n:'Bosnie-Herz.',c:'BA'}]},
+  {id:'C',teams:[{f:'🇧🇷',n:'Brésil',c:'BR'},{f:'🇲🇦',n:'Maroc',c:'MA'},{f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Écosse',c:'SC'},{f:'🇭🇹',n:'Haïti',c:'HT'}]},
+  {id:'D',teams:[{f:'🇺🇸',n:'USA',c:'US'},{f:'🇦🇺',n:'Australie',c:'AU'},{f:'🇵🇾',n:'Paraguay',c:'PY'},{f:'🇹🇷',n:'Turquie',c:'TR'}]},
+  {id:'E',teams:[{f:'🇩🇪',n:'Allemagne',c:'DE'},{f:'🇪🇨',n:'Équateur',c:'EC'},{f:'🇨🇮',n:"C. d'Ivoire",c:'CI'},{f:'🇨🇼',n:'Curaçao',c:'CW'}]},
+  {id:'F',teams:[{f:'🇳🇱',n:'Pays-Bas',c:'NL'},{f:'🇯🇵',n:'Japon',c:'JP'},{f:'🇹🇳',n:'Tunisie',c:'TN'},{f:'🇸🇪',n:'Suède',c:'SE'}]},
+  {id:'G',teams:[{f:'🇧🇪',n:'Belgique',c:'BE'},{f:'🇮🇷',n:'Iran',c:'IR'},{f:'🇪🇬',n:'Égypte',c:'EG'},{f:'🇳🇿',n:'Nv-Zélande',c:'NZ'}]},
+  {id:'H',teams:[{f:'🇪🇸',n:'Espagne',c:'ES'},{f:'🇺🇾',n:'Uruguay',c:'UY'},{f:'🇸🇦',n:'Arabie Saoud.',c:'SA'},{f:'🇨🇻',n:'Cap-Vert',c:'CV'}]},
+  {id:'I',teams:[{f:'🇫🇷',n:'France',c:'FR'},{f:'🇸🇳',n:'Sénégal',c:'SN'},{f:'🇳🇴',n:'Norvège',c:'NO'},{f:'🇮🇶',n:'Irak',c:'IQ'}]},
+  {id:'J',teams:[{f:'🇦🇷',n:'Argentine',c:'AR'},{f:'🇦🇹',n:'Autriche',c:'AT'},{f:'🇩🇿',n:'Algérie',c:'DZ'},{f:'🇯🇴',n:'Jordanie',c:'JO'}]},
+  {id:'K',teams:[{f:'🇵🇹',n:'Portugal',c:'PT'},{f:'🇨🇴',n:'Colombie',c:'CO'},{f:'🇺🇿',n:'Ouzbékistan',c:'UZ'},{f:'🇨🇩',n:'RD Congo',c:'CD'}]},
+  {id:'L',teams:[{f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'Angleterre',c:'EN'},{f:'🇭🇷',n:'Croatie',c:'HR'},{f:'🇵🇦',n:'Panama',c:'PA'},{f:'🇬🇭',n:'Ghana',c:'GH'}]},
+];
+const GM = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+const R32P = [
+  ['A',0,'B',1,'Toronto'],   ['A',1,'B',0,'San Francisco'],
+  ['C',0,'D',1,'Houston'],   ['C',1,'D',0,'Monterrey'],
+  ['E',0,'F',1,'Boston'],    ['E',1,'F',0,'New York/NJ'],
+  ['G',0,'H',1,'Los Angeles'],['G',1,'H',0,'Seattle'],
+  ['I',0,'J',1,'Philadelphia'],['I',1,'J',0,'Dallas'],
+  ['K',0,'L',1,'Kansas City'],['K',1,'L',0,'Atlanta'],
+  ['A',2,'C',2,'Vancouver'], ['B',2,'D',2,'Guadalajara'],
+  ['E',2,'G',2,'Miami'],     ['F',2,'H',2,'Los Angeles'],
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let SC = {}; // SC[groupId][matchIdx] = {s1,s2}
+let BK = {}; // bracket rounds
+
+function initSC(){
+  GD.forEach(g=>{ SC[g.id]=GM.map(()=>({s1:'',s2:''})); });
+}
+function initBK(){
+  BK={
+    r32:R32P.map(p=>({t1:null,t2:null,winner:null,s1:'',s2:'',loc:p[4]})),
+    r16:Array(8).fill(0).map(()=>({t1:null,t2:null,winner:null,s1:'',s2:'',loc:''})),
+    qf: Array(4).fill(0).map(()=>({t1:null,t2:null,winner:null,s1:'',s2:'',loc:''})),
+    sf: Array(2).fill(0).map(()=>({t1:null,t2:null,winner:null,s1:'',s2:'',loc:''})),
+    fin:[{t1:null,t2:null,winner:null,s1:'',s2:'',loc:'MetLife Stadium · 19 juillet 2026'}],
+    tp: [{t1:null,t2:null,winner:null,s1:'',s2:'',loc:'Miami · 16 juillet 2026'}],
+  };
+}
+
+// ══════════════════════════════════════════
+// STANDINGS (pure calculation, no DOM)
+// ══════════════════════════════════════════
+function calcStandings(gid){
+  const g=GD.find(x=>x.id===gid);
+  const st=g.teams.map((_,i)=>({idx:i,pts:0,gf:0,ga:0,gd:0,w:0,d:0,l:0,gp:0}));
+  GM.forEach(([ai,bi],mi)=>{
+    const s=SC[gid][mi];
+    const s1=parseInt(s.s1), s2=parseInt(s.s2);
+    if(isNaN(s1)||isNaN(s2)||s.s1===''||s.s2==='') return;
+    st[ai].gp++;st[bi].gp++;
+    st[ai].gf+=s1;st[ai].ga+=s2;st[ai].gd+=s1-s2;
+    st[bi].gf+=s2;st[bi].ga+=s1;st[bi].gd+=s2-s1;
+    if(s1>s2){st[ai].pts+=3;st[ai].w++;st[bi].l++;}
+    else if(s1<s2){st[bi].pts+=3;st[bi].w++;st[ai].l++;}
+    else{st[ai].pts+=1;st[ai].d++;st[bi].pts+=1;st[bi].d++;}
+  });
+  st.sort((a,b)=>{
+    if(b.pts!==a.pts)return b.pts-a.pts;
+    if(b.gd!==a.gd)return b.gd-a.gd;
+    if(b.gf!==a.gf)return b.gf-a.gf;
+    return a.idx-b.idx;
+  });
+  return st;
+}
+function getQ(gid,rank){
+  const st=calcStandings(gid);
+  if(!st[rank])return null;
+  return GD.find(g=>g.id===gid).teams[st[rank].idx];
+}
+
+// ══════════════════════════════════════════
+// BRACKET PROPAGATION
+// ══════════════════════════════════════════
+function propagate(){
+  // Fill r32 from group standings
+  R32P.forEach(([g1,r1,g2,r2,loc],i)=>{
+    const nt1=getQ(g1,r1), nt2=getQ(g2,r2);
+    const m=BK.r32[i];
+    if(!teq(m.t1,nt1)||!teq(m.t2,nt2)){
+      BK.r32[i]={t1:nt1,t2:nt2,winner:null,s1:'',s2:'',loc};
+    }
+  });
+  // r32->r16->qf->sf->fin/tp
+  for(let i=0;i<8;i++) upd(BK.r16,i,win(BK.r32[i*2]),win(BK.r32[i*2+1]));
+  for(let i=0;i<4;i++) upd(BK.qf,i,win(BK.r16[i*2]),win(BK.r16[i*2+1]));
+  for(let i=0;i<2;i++) upd(BK.sf,i,win(BK.qf[i*2]),win(BK.qf[i*2+1]));
+  const sf1w=win(BK.sf[0]),sf2w=win(BK.sf[1]);
+  const sf1l=los(BK.sf[0]),sf2l=los(BK.sf[1]);
+  if(!teq(BK.fin[0].t1,sf1w)||!teq(BK.fin[0].t2,sf2w))
+    BK.fin[0]={...BK.fin[0],t1:sf1w,t2:sf2w,winner:null,s1:'',s2:''};
+  if(!teq(BK.tp[0].t1,sf1l)||!teq(BK.tp[0].t2,sf2l))
+    BK.tp[0]={...BK.tp[0],t1:sf1l,t2:sf2l,winner:null,s1:'',s2:''};
+}
+function upd(arr,i,nt1,nt2){
+  const m=arr[i];
+  if(!teq(m.t1,nt1)||!teq(m.t2,nt2))
+    arr[i]={...m,t1:nt1,t2:nt2,winner:null,s1:'',s2:''};
+}
+function win(m){if(!m)return null;if(m.winner===0)return m.t1;if(m.winner===1)return m.t2;return null;}
+function los(m){if(!m)return null;if(m.winner===0)return m.t2;if(m.winner===1)return m.t1;return null;}
+function teq(a,b){if(!a&&!b)return true;if(!a||!b)return false;return a.n===b.n;}
+
+// ══════════════════════════════════════════
+// RENDER GROUPS — built once, standings patched in place
+// ══════════════════════════════════════════
+function buildGroups(){
+  const cont=document.getElementById('gc');
+  cont.innerHTML='';
+  GD.forEach(g=>{
+    const card=document.createElement('div');
+    card.className='gc';
+    card.id='gc-'+g.id;
+
+    // header
+    card.innerHTML=`<div class="gc-head"><h3>GROUPE ${g.id}</h3></div>`;
+
+    // standings table — rows have stable IDs
+    const tbl=document.createElement('table');
+    tbl.className='gtbl';
+    tbl.id='gtbl-'+g.id;
+    tbl.innerHTML=`<thead><tr>
+      <th>#</th><th>Équipe</th><th>J</th><th>G</th><th>N</th><th>P</th><th>BP</th><th>BC</th><th>Diff</th><th>Pts</th>
+    </tr></thead><tbody id="gtbd-${g.id}"></tbody>`;
+    card.appendChild(tbl);
+
+    // match section — built once, never recreated
+    const msec=document.createElement('div');
+    msec.className='msec';
+    msec.innerHTML='<div class="msec-title">Matchs</div>';
+    GM.forEach(([ai,bi],mi)=>{
+      const ta=g.teams[ai],tb=g.teams[bi];
+      const row=document.createElement('div');
+      row.className='mrow';
+      row.id=`mr-${g.id}-${mi}`;
+      row.innerHTML=`
+        <div class="mt">
+          <span style="font-size:12px">${ta.f}</span>
+          <div class="cc">${ta.c}</div>
+          <span>${ta.n}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+          <input class="sinp" type="number" min="0" max="30"
+            id="sc-${g.id}-${mi}-0" placeholder="-"
+            inputmode="numeric" pattern="[0-9]*">
+          <span class="ssep">—</span>
+          <input class="sinp" type="number" min="0" max="30"
+            id="sc-${g.id}-${mi}-1" placeholder="-"
+            inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div class="mt r">
+          <span>${tb.n}</span>
+          <div class="cc">${tb.c}</div>
+          <span style="font-size:12px">${tb.f}</span>
+        </div>`;
+      msec.appendChild(row);
+    });
+    card.appendChild(msec);
+    cont.appendChild(card);
+  });
+
+  // Attach input listeners — once, stable
+  GD.forEach(g=>{
+    GM.forEach(([ai,bi],mi)=>{
+      [0,1].forEach(si=>{
+        const inp=document.getElementById(`sc-${g.id}-${mi}-${si}`);
+        inp.value=SC[g.id][mi][si===0?'s1':'s2'];
+        inp.addEventListener('input',e=>{
+          SC[g.id][mi][si===0?'s1':'s2']=e.target.value;
+          patchStandings(g.id);   // only update standings rows, NO scroll jump
+          propagate();
+          if(document.getElementById('page-bracket').classList.contains('active'))
+            renderBracket();
+        });
+      });
+    });
+  });
+
+  // Initial standings render
+  GD.forEach(g=>patchStandings(g.id));
+}
+
+// Patch only the standings tbody — no DOM rebuild of inputs
+function patchStandings(gid){
+  const g=GD.find(x=>x.id===gid);
+  const st=calcStandings(gid);
+  const tbody=document.getElementById('gtbd-'+gid);
+  // reuse existing rows if possible
+  if(tbody.children.length!==4){
+    tbody.innerHTML='';
+    for(let i=0;i<4;i++){
+      const tr=document.createElement('tr');
+      tr.id=`gtr-${gid}-${i}`;
+      tbody.appendChild(tr);
+    }
+  }
+  st.forEach((s,pos)=>{
+    const t=g.teams[s.idx];
+    const isMar=t.n==='Maroc';
+    const tr=tbody.children[pos];
+    tr.className=pos===0?'rk1':pos===1?'rk2':pos===2?'rk3':'';
+    if(isMar) tr.style.outline='1px solid rgba(200,16,46,.35)';
+    else tr.style.outline='';
+    const diffStr=s.gd>0?'+'+s.gd:s.gd+'';
+    const diffColor=s.gd>0?'var(--green)':s.gd<0?'var(--red)':'var(--text)';
+    tr.innerHTML=`
+      <td style="font-weight:700;color:${pos===0?'var(--green)':pos===1?'var(--green2)':pos===2?'var(--gold)':'var(--muted)'}">${pos+1}</td>
+      <td><div class="team-cell">
+        <div class="cc">${t.c}</div>
+        <span style="font-size:13px">${t.f}</span>
+        <span>${t.n}</span>${isMar?'<span style="color:var(--red);font-size:10px;margin-left:2px">★</span>':''}
+      </div></td>
+      <td>${s.gp}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td>
+      <td>${s.gf}</td><td>${s.ga}</td>
+      <td style="color:${diffColor}">${diffStr}</td>
+      <td class="pts-col">${s.pts}</td>`;
+  });
+}
+
+// ══════════════════════════════════════════
+// RENDER BRACKET — full redraw ok (user is on bracket tab, no scroll issue)
+// ══════════════════════════════════════════
+function renderBracket(){
+  propagate();
+  const cont=document.getElementById('bk');
+  cont.innerHTML='';
+  [{key:'r32',label:'32es de Finale'},{key:'r16',label:'16es de Finale'},
+   {key:'qf',label:'Quarts de Finale'},{key:'sf',label:'Demi-Finales'}
+  ].forEach(({key,label})=>{
+    const col=document.createElement('div');
+    col.className='bround';
+    col.innerHTML=`<div class="brtitle">${label}</div>`;
+    const slots=document.createElement('div');
+    slots.className='bslots';
+    BK[key].forEach((m,i)=>slots.appendChild(mkBM(key,i,m)));
+    col.appendChild(slots);
+    cont.appendChild(col);
+  });
+  // Final col
+  const fc=document.createElement('div');
+  fc.className='bround finalcol';
+  fc.innerHTML='<div class="fcol-title">FINALE</div><div class="trophy-ani">🏆</div>';
+  fc.appendChild(mkFinalCard());
+  fc.appendChild(mkTPCard());
+  cont.appendChild(fc);
+  attachBKInputs();
+}
+
+function mkBM(rk,idx,m){
+  const div=document.createElement('div');
+  const hasMar=(m.t1&&m.t1.n==='Maroc')||(m.t2&&m.t2.n==='Maroc');
+  div.className='bm'+(hasMar?' hamar':'');
+  if(!m.t1&&!m.t2){div.innerHTML='<div class="bpend">En attente...</div>';return div;}
+  [0,1].forEach(side=>{
+    const t=side===0?m.t1:m.t2;
+    const isSel=m.winner===side;
+    const isMar=t&&t.n==='Maroc';
+    const bt=document.createElement('div');
+    if(!t){bt.className='bt tbd';bt.innerHTML='<span>À déterminer</span>';}
+    else{
+      bt.className='bt'+(isSel?' sel'+(isMar?' mar':''):'');
+      bt.innerHTML=`<span style="font-size:12px">${t.f}</span><span style="flex:1">${t.n}</span>${isSel?'<span style="color:var(--green);font-size:9px">✓</span>':''}`;
+      bt.onclick=()=>{
+        BK[rk][idx].winner=BK[rk][idx].winner===side?null:side;
+        propagate();renderBracket();
+      };
+    }
+    div.appendChild(bt);
+  });
+  const sr=document.createElement('div');
+  sr.className='bscrow';
+  sr.innerHTML=`
+    <input class="bsi ${m.winner===0?'wsi':''}" type="number" min="0" max="20" value="${m.s1}" placeholder="-"
+      data-rk="${rk}" data-i="${idx}" data-s="0" inputmode="numeric">
+    <span class="bloc">—</span>
+    <input class="bsi ${m.winner===1?'wsi':''}" type="number" min="0" max="20" value="${m.s2}" placeholder="-"
+      data-rk="${rk}" data-i="${idx}" data-s="1" inputmode="numeric">
+    ${m.loc?`<span class="bloc" style="font-size:8px">${m.loc}</span>`:''}`;
+  div.appendChild(sr);
+  return div;
+}
+
+function mkFinalCard(){
+  const m=BK.fin[0];
+  const t1=m.t1,t2=m.t2,w=win(m);
+  const isMar1=t1&&t1.n==='Maroc',isMar2=t2&&t2.n==='Maroc',isMarW=w&&w.n==='Maroc';
+  const div=document.createElement('div');
+  div.className='fcard';
+  div.innerHTML=`
+    <div class="ftitle">🏆 GRANDE FINALE</div>
+    <div class="fvenue">${m.loc}</div>
+    <div class="fteams">
+      <div class="fside">
+        <span class="fflag">${t1?t1.f:'❓'}</span>
+        <div class="fname" style="${m.winner===0?'color:var(--green);':''}${isMar1?'color:#ff9aaa;':''}">${t1?t1.n:'?'}</div>
+      </div>
+      <span class="fvs">VS</span>
+      <div class="fside">
+        <span class="fflag">${t2?t2.f:'❓'}</span>
+        <div class="fname" style="${m.winner===1?'color:var(--green);':''}${isMar2?'color:#ff9aaa;':''}">${t2?t2.n:'?'}</div>
+      </div>
+    </div>
+    <div class="fscrow">
+      <input class="fsi ${m.winner===0?'wsi':''}" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="fin" data-i="0" data-s="0">
+      <span style="font-family:'Bebas Neue';font-size:16px;color:var(--muted)">—</span>
+      <input class="fsi ${m.winner===1?'wsi':''}" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="fin" data-i="0" data-s="1">
+    </div>
+    <div class="fbtns">
+      <button class="fbtn ${m.winner===0?(isMar1?'actmar':'active'):''}" onclick="pickW('fin',0,0)">${t1?t1.n:'Équipe 1'} gagne</button>
+      <button class="fbtn ${m.winner===1?(isMar2?'actmar':'active'):''}" onclick="pickW('fin',0,1)">${t2?t2.n:'Équipe 2'} gagne</button>
+    </div>
+    <div class="champion-box">
+      ${w
+        ?`<div class="champ-tag" style="background:${isMarW?'var(--red)':'var(--green2)'};color:#fff;">${w.f} ${w.n.toUpperCase()} CHAMPION 🏆</div>`
+        :'<div style="font-size:10px;color:var(--muted)">Clique sur une équipe ↑</div>'}
+    </div>`;
+  return div;
+}
+
+function mkTPCard(){
+  const m=BK.tp[0];
+  const t1=m.t1,t2=m.t2,w=win(m);
+  const div=document.createElement('div');
+  div.className='tpcard';
+  div.innerHTML=`
+    <div class="tplabel">🥉 3e Place</div>
+    <div class="tpvenue">${m.loc}</div>
+    <div class="tpteams">
+      <div class="tpside"><span class="tpflag">${t1?t1.f:'❓'}</span>
+        <div class="tpname" style="${m.winner===0?'color:var(--green);font-weight:700':''}">${t1?t1.n:'?'}</div></div>
+      <span class="tpvs">VS</span>
+      <div class="tpside"><span class="tpflag">${t2?t2.f:'❓'}</span>
+        <div class="tpname" style="${m.winner===1?'color:var(--green);font-weight:700':''}">${t2?t2.n:'?'}</div></div>
+    </div>
+    <div class="tpsc">
+      <input class="tpsi" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="tp" data-i="0" data-s="0">
+      <span class="ssep">—</span>
+      <input class="tpsi" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="tp" data-i="0" data-s="1">
+    </div>
+    <div class="tpbtns">
+      <button class="tpbtn ${m.winner===0?'active':''}" onclick="pickW('tp',0,0)">${t1?t1.n:'?'}</button>
+      <button class="tpbtn ${m.winner===1?'active':''}" onclick="pickW('tp',0,1)">${t2?t2.n:'?'}</button>
+    </div>
+    ${w?`<div style="margin-top:4px;font-size:11px;color:var(--gold);font-weight:700">${w.f} ${w.n} 🥉</div>`:''}`;
+  return div;
+}
+
+function attachBKInputs(){
+  document.querySelectorAll('[data-rk]').forEach(inp=>{
+    inp.addEventListener('input',e=>{
+      const ref={r32:BK.r32,r16:BK.r16,qf:BK.qf,sf:BK.sf,fin:BK.fin,tp:BK.tp}[e.target.dataset.rk];
+      const i=parseInt(e.target.dataset.i);
+      if(ref&&ref[i]) ref[i][e.target.dataset.s==='0'?'s1':'s2']=e.target.value;
+    });
+    inp.addEventListener('click',e=>e.stopPropagation());
+  });
+}
+
+function pickW(rk,i,side){
+  const ref={r32:BK.r32,r16:BK.r16,qf:BK.qf,sf:BK.sf,fin:BK.fin,tp:BK.tp}[rk];
+  if(!ref||!ref[i])return;
+  const t=side===0?ref[i].t1:ref[i].t2;
+  if(!t)return;
+  ref[i].winner=ref[i].winner===side?null:side;
+  propagate();renderBracket();
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function switchTab(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='bracket'){propagate();renderBracket();}
+}
+
+// ══════════════════════════════════════════
+// SAVE / SHARE / RESET
+// ══════════════════════════════════════════
+function saveData(){
+  try{localStorage.setItem('wc2026v4',JSON.stringify({SC,BK}));toast('✅ Sauvegardé!');}
+  catch(e){toast('Erreur');}
+}
+function loadSaved(){
+  try{
+    const d=localStorage.getItem('wc2026v4');
+    if(d){const p=JSON.parse(d);if(p.SC)SC=p.SC;if(p.BK)BK=p.BK;}
+  }catch(e){}
+}
+function shareLink(){
+  try{
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,BK}))));
+    const url=location.href.split('?')[0]+'?d='+enc;
+    navigator.clipboard.writeText(url).then(()=>toast('🔗 Lien copié!')).catch(()=>prompt('Copie:',url));
+  }catch(e){toast('Erreur partage');}
+}
+function loadFromUrl(){
+  try{
+    const p=new URLSearchParams(location.search);
+    if(p.has('d')){const parsed=JSON.parse(decodeURIComponent(escape(atob(p.get('d')))));if(parsed.SC)SC=parsed.SC;if(parsed.BK)BK=parsed.BK;}
+  }catch(e){}
+}
+function resetAll(){
+  localStorage.removeItem('wc2026v4');
+  initSC();initBK();
+  GD.forEach(g=>patchStandings(g.id));
+  // reset input values without rebuilding DOM
+  GD.forEach(g=>{
+    GM.forEach(([ai,bi],mi)=>{
+      [0,1].forEach(si=>{
+        const inp=document.getElementById(`sc-${g.id}-${mi}-${si}`);
+        if(inp) inp.value='';
+      });
+    });
+  });
+  propagate();
+  if(document.getElementById('page-bracket').classList.contains('active')) renderBracket();
+  toast('🔄 Réinitialisé');
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
+initSC();
+initBK();
+loadSaved();
+loadFromUrl();
+buildGroups();  // builds DOM once, inputs stable
+propagate();
+</script>
+</body>
+</html>
