@@ -1674,33 +1674,59 @@ function downloadImage(){
   btn.textContent = '⏳ ...';
   btn.disabled = true;
 
-  // Add watermark
+  // Step 1: Replace all flag <img> with emoji <span> temporarily
+  const swapped = [];
+  el.querySelectorAll('img[alt]').forEach(img => {
+    const code = img.alt;
+    const em = FEMOJI[code];
+    if(em){
+      const span = document.createElement('span');
+      span.textContent = em;
+      span.style.cssText = `font-size:${Math.max(img.width||20, 16)}px;line-height:1;vertical-align:middle;display:inline-block;`;
+      img.parentNode.replaceChild(span, img);
+      swapped.push({span, img}); // remember to restore
+    }
+  });
+
+  // Step 2: Add watermark
   const wm = document.createElement('div');
-  wm.style.cssText = 'text-align:center;padding:10px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:var(--muted);';
+  wm.style.cssText = 'text-align:center;padding:12px;font-family:"Bebas Neue",cursive;font-size:14px;letter-spacing:.1em;color:#5a8a6a;background:#0a1a10;margin-top:8px;';
   wm.textContent = '⚽ KoraSim.com — FIFA World Cup 2026 Simulator';
   el.appendChild(wm);
 
+  // Step 3: Screenshot
   html2canvas(el, {
     backgroundColor: '#0a1a10',
     scale: 2,
-    useCORS: true,
+    useCORS: false,
     allowTaint: true,
     logging: false,
   }).then(canvas => {
+    // Step 4: Restore everything
     el.removeChild(wm);
+    swapped.forEach(({span, img}) => {
+      if(span.parentNode) span.parentNode.replaceChild(img, span);
+    });
+
+    // Step 5: Download
     const link = document.createElement('a');
     const tabName = activeId.replace('page-','');
     link.download = `korasim-wc2026-${tabName}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
+
     btn.textContent = origText;
     btn.disabled = false;
     toast(T[LANG].imgDone || '📸 Downloaded!');
-  }).catch(()=>{
-    el.removeChild(wm);
+  }).catch(err => {
+    // Restore on error too
+    if(wm.parentNode) el.removeChild(wm);
+    swapped.forEach(({span, img}) => {
+      if(span.parentNode) span.parentNode.replaceChild(img, span);
+    });
     btn.textContent = origText;
     btn.disabled = false;
-    toast('Error');
+    toast('Error — try again');
   });
 }
 
