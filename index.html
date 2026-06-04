@@ -237,7 +237,7 @@ const T={
     winBtn:'wins',champion:'CHAMPION',pending:'Waiting...',tbd:'TBD',
     r32:'Round of 32',r16:'Round of 16',qf:'Quarterfinals',sf:'Semifinals',
     clickTeam:'Pick a team above ↑',
-    best3:'Best 3rd-Place Teams',best3hint:'👆 Click a row to qualify / disqualify · Auto-ranked by points',max8:'Maximum 8 teams already selected',
+    best3:'Best 3rd-Place Teams',best3hint:'👆 Click a row to qualify / disqualify · 🤖 Auto · ✏️ Manual',max8:'Maximum 8 teams already selected',resetAuto:'Reset to auto ranking',
     rank:'Rank',team:'Team',group:'Group',
     note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable'},
   fr:{title:'KORASIM — COUPE DU MONDE FIFA 2026',sub:'Simuler · Prédire · Partager',
@@ -253,7 +253,7 @@ const T={
     winBtn:'gagne',champion:'CHAMPION',pending:'En attente...',tbd:'À déterminer',
     r32:'32es de finale',r16:'16es de finale',qf:'Quarts de finale',sf:'Demi-finales',
     clickTeam:'Clique sur une équipe ↑',
-    best3:'Meilleurs 3es',best3hint:'👆 Clique sur une ligne pour qualifier/disqualifier · Classement automatique',max8:'Maximum 8 équipes déjà sélectionnées',
+    best3:'Meilleurs 3es',best3hint:"👆 Clique pour qualifier/disqualifier · 🤖 Auto · ✏️ Manuel",max8:'Maximum 8 équipes déjà sélectionnées',resetAuto:'Revenir au classement auto',
     rank:'Rang',team:'Équipe',group:'Groupe',
     note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable'},
   ar:{title:'كوراسيم — كأس العالم FIFA 2026',sub:'محاكاة · تنبؤ · مشاركة',
@@ -269,7 +269,7 @@ const T={
     winBtn:'يفوز',champion:'بطل',pending:'في الانتظار...',tbd:'لم يحدد',
     r32:'دور الـ32',r16:'دور الـ16',qf:'ربع النهائي',sf:'نصف النهائي',
     clickTeam:'انقر على فريق أعلاه ↑',
-    best3:'أفضل الفرق الثالثة',best3hint:'👆 انقر على صف للتأهيل أو الإقصاء · ترتيب تلقائي',max8:'تم اختيار 8 فرق بالفعل',
+    best3:'أفضل الفرق الثالثة',best3hint:'👆 انقر للتأهيل أو الإقصاء · 🤖 تلقائي · ✏️ يدوي',max8:'تم اختيار 8 فرق بالفعل',resetAuto:'إعادة الترتيب التلقائي',
     rank:'الترتيب',team:'الفريق',group:'المجموعة',
     note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة'},
 };
@@ -455,34 +455,44 @@ function calcBest3rds(){
   return thirds;
 }
 
+// BEST3 has 3 modes:
+// 0 = pure auto (no scores, no manual) — top 8 by default order
+// 1 = score-based auto — top 8 recalculated from scores, reset on every score change
+// 2 = manual — user clicked at least once
+let BEST3_MODE = 0; // 0=auto, 1=score-auto, 2=manual
+
 function getBest3Qualified(){
   const thirds = calcBest3rds();
-  // Check if any manual selection exists
-  const hasManual = Object.keys(BEST3_SEL).length > 0;
-  if(hasManual){
-    // Use manual selection — return teams marked as qualified
+  if(BEST3_MODE === 2){
     return thirds.filter(s => BEST3_SEL[s.groupId] === true);
   }
-  // Auto: top 8 by ranking
   return thirds.slice(0,8);
+}
+
+// Called on every score input change — recalculate auto top 8 unless user manually overrode
+function syncBest3FromScores(){
+  if(BEST3_MODE === 2) return; // user has manual control, don't override
+  const thirds = calcBest3rds();
+  BEST3_SEL = {};
+  thirds.slice(0,8).forEach(s=>{ BEST3_SEL[s.groupId]=true; });
+  thirds.slice(8).forEach(s=>{ BEST3_SEL[s.groupId]=false; });
+  BEST3_MODE = 1; // score-based auto
 }
 
 function toggleBest3(groupId){
   const thirds = calcBest3rds();
-  const hasManual = Object.keys(BEST3_SEL).length > 0;
-  if(!hasManual){
-    // First manual click — initialize from auto top 8
+  if(BEST3_MODE !== 2){
+    // First manual click — initialize from current auto ranking
+    BEST3_SEL = {};
     thirds.slice(0,8).forEach(s=>{ BEST3_SEL[s.groupId]=true; });
     thirds.slice(8).forEach(s=>{ BEST3_SEL[s.groupId]=false; });
+    BEST3_MODE = 2; // switch to manual mode
   }
-  // Count currently selected
   const selCount = Object.values(BEST3_SEL).filter(Boolean).length;
   const cur = BEST3_SEL[groupId];
   if(cur){
-    // Deselect — always allowed
     BEST3_SEL[groupId] = false;
   } else {
-    // Select — only if < 8 selected
     if(selCount >= 8){ toast(T[LANG].max8||'Max 8 teams'); return; }
     BEST3_SEL[groupId] = true;
   }
@@ -495,12 +505,11 @@ function renderBest3rds(){
   const tbody=document.getElementById('best3-body');
   if(!tbody)return;
   const thirds=calcBest3rds();
-  const hasManual = Object.keys(BEST3_SEL).length > 0;
-  const selCount = hasManual ? Object.values(BEST3_SEL).filter(Boolean).length : 8;
+  const isManual = BEST3_MODE === 2;
+  const selCount = isManual ? Object.values(BEST3_SEL).filter(Boolean).length : 8;
   tbody.innerHTML='';
   thirds.forEach((s,i)=>{
-    const isQ = hasManual ? (BEST3_SEL[s.groupId]===true) : i<8;
-    const autoQ = i<8;
+    const isQ = isManual ? (BEST3_SEL[s.groupId]===true) : i<8;
     const tr=document.createElement('tr');
     tr.className=isQ?'qualified':'';
     tr.style.cursor='pointer';
@@ -508,8 +517,8 @@ function renderBest3rds(){
     const diffStr=s.gd>0?'+'+s.gd:s.gd+'';
     const diffColor=s.gd>0?'var(--green)':s.gd<0?'var(--red)':'var(--text)';
     const checkBtn = isQ
-      ? `<span style="color:var(--green);font-size:14px;cursor:pointer" title="Qualified — click to remove">✅</span>`
-      : `<span style="color:var(--muted);font-size:14px;cursor:pointer" title="Not qualified — click to add">⬜</span>`;
+      ? `<span style="color:var(--green);font-size:14px">✅</span>`
+      : `<span style="color:var(--muted);font-size:14px">⬜</span>`;
     tr.innerHTML=`
       <td style="font-weight:700;color:${isQ?'var(--green)':'var(--muted)'}">${i+1}</td>
       <td>${checkBtn}</td>
@@ -523,13 +532,30 @@ function renderBest3rds(){
     tr.onclick = () => toggleBest3(s.groupId);
     tbody.appendChild(tr);
   });
-  // Show counter
+  // Update title + mode indicator
   const lbl = document.getElementById('lbl-best3');
   if(lbl){
-    const t = T[LANG];
-    lbl.textContent = (t.best3||'Best 3rd-Place Teams') + ` (${selCount}/8)`;
+    const badge = isManual ? ' ✏️' : ' 🤖';
+    lbl.textContent = (T[LANG].best3||'Best 3rd-Place Teams') + ` (${selCount}/8)${badge}`;
     lbl.style.color = selCount===8 ? 'var(--green)' : 'var(--red)';
   }
+  // Show/hide reset-to-auto button
+  let resetBtn = document.getElementById('best3-reset-btn');
+  if(!resetBtn){
+    resetBtn = document.createElement('button');
+    resetBtn.id = 'best3-reset-btn';
+    resetBtn.style.cssText='display:none;margin:4px auto 6px;padding:4px 14px;background:rgba(201,168,76,.15);border:1px solid var(--gold);color:var(--gold);border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit;';
+    resetBtn.onclick = (e)=>{
+      e.stopPropagation();
+      BEST3_MODE = 0; BEST3_SEL = {};
+      renderBest3rds(); propagate();
+      if(document.getElementById('page-bracket').classList.contains('active')) renderBracket();
+    };
+    const hint = document.getElementById('lbl-best3hint');
+    if(hint && hint.parentNode) hint.parentNode.insertBefore(resetBtn, hint.nextSibling);
+  }
+  resetBtn.style.display = isManual ? 'block' : 'none';
+  resetBtn.textContent = '🔄 ' + (T[LANG].resetAuto||'Reset to auto ranking');
 }
 
 // ══════ BRACKET PROPAGATION ══════
@@ -642,6 +668,7 @@ function buildGroups(){
         const inp=document.getElementById(`sc-${g.id}-${mi}-${si}`);
         inp.addEventListener('input',e=>{
           SC[g.id][mi][si===0?'s1':'s2']=e.target.value;
+          syncBest3FromScores();
           patchStandings(g.id);
           renderBest3rds();
           propagate();
@@ -973,7 +1000,7 @@ function switchTab(id){
 }
 
 function saveData(){
-  try{localStorage.setItem('korasim_v2',JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL}));toast(T[LANG].saved);}
+  try{localStorage.setItem('korasim_v2',JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE}));toast(T[LANG].saved);}
   catch(e){toast('Error');}
 }
 function loadSaved(){
@@ -982,6 +1009,7 @@ function loadSaved(){
       if(p.SC)SC=p.SC;if(p.MO)MO=p.MO;if(p.MOM)MOM=p.MOM;
       if(p.BK)BK=p.BK;if(p.LANG)LANG=p.LANG;
       if(p.BEST3_SEL)BEST3_SEL=p.BEST3_SEL;
+      if(p.BEST3_MODE!==undefined)BEST3_MODE=p.BEST3_MODE;
     }
   }catch(e){}
 }
@@ -1006,6 +1034,7 @@ function resetAll(){
   localStorage.removeItem('korasim_v2');
   initSC();initBK();
   BEST3_SEL={};
+  BEST3_MODE=0;
   GD.forEach(g=>{
     GM.forEach(([ai,bi],mi)=>[0,1].forEach(si=>{
       const inp=document.getElementById(`sc-${g.id}-${mi}-${si}`);
