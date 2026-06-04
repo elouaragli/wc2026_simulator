@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google-site-verification" content="fU8KGnhTmti7qnW5IWB4ADpMI5ED9i3RoEElv">
 <meta name="description" content="FIFA World Cup 2026 Simulator — Predict groups, bracket and champion.">
 <meta property="og:title" content="KoraSim — FIFA World Cup 2026 Simulator">
 <meta property="og:type" content="website">
@@ -1627,11 +1628,12 @@ function loadSaved(){
 function shareLink(){
   try{
     const activeTab = document.querySelector('.page.active')?.id?.replace('page-','') || 'groups';
-    // Only encode non-default data to keep link short
     const compact = buildCompact(activeTab);
     const enc = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
     const url = location.href.split('?')[0]+'?d='+enc;
-    navigator.clipboard.writeText(url).then(()=>toast(T[LANG].copied)).catch(()=>prompt('Copy:',url));
+    navigator.clipboard.writeText(url)
+      .then(()=>toast(T[LANG].copied||'Copied!'))
+      .catch(()=>prompt('Copy:', url));
   }catch(e){toast('Error');}
 }
 
