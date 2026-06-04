@@ -152,6 +152,24 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
 .abtn:hover,.abtn.p{background:var(--green2);color:#fff;}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--green2);color:#fff;padding:7px 18px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;}
 .toast.show{opacity:1;}
+
+/* Detailed match cards for separate pages */
+.match-card-full{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
+.match-card-full.has-fav{border-color:rgba(200,16,46,.5);background:linear-gradient(135deg,rgba(200,16,46,.07),var(--card));}
+.mcf-header{font-size:9px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;}
+.mcf-teams{display:flex;flex-direction:column;gap:4px;}
+.mcf-team{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;transition:all .12s;font-size:13px;color:var(--muted);}
+.mcf-team:hover{background:rgba(255,255,255,.05);color:var(--text);}
+.mcf-team.sel{background:rgba(29,185,84,.2);color:var(--text);font-weight:700;}
+.mcf-team.sel.fav{background:rgba(200,16,46,.2);color:#ff9aaa;font-weight:700;}
+.mcf-team.tbd{color:var(--muted);font-style:italic;pointer-events:none;}
+.mcf-score{display:flex;align-items:center;gap:4px;justify-content:center;padding:4px 0 2px;}
+.mcf-si{width:32px;height:26px;background:var(--bg3);border:1px solid var(--border);color:var(--text);text-align:center;font-size:14px;font-weight:700;border-radius:3px;outline:none;}
+.mcf-si:focus{border-color:var(--green);}
+.mcf-si.wsi{border-color:var(--green2);}
+.mcf-vs{font-family:'Bebas Neue',cursive;font-size:16px;color:var(--muted);}
+.tabs{flex-wrap:wrap;}
+
 .fnote{font-size:11px;color:var(--muted);text-align:center;padding:12px;border-top:1px solid var(--border);}
 </style>
 </head>
@@ -194,9 +212,14 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
     </div>
   </div>
 </div>
-<div class="tabs">
+<div class="tabs" id="main-tabs">
   <div class="tab active" id="tab-groups" onclick="switchTab('groups')"><span id="tab-g-lbl">📋 Groups</span></div>
-  <div class="tab" id="tab-bracket" onclick="switchTab('bracket')"><span id="tab-b-lbl">🏆 Bracket</span></div>
+  <div class="tab" id="tab-r32" onclick="switchTab('r32')"><span id="tab-r32-lbl">32</span></div>
+  <div class="tab" id="tab-r16" onclick="switchTab('r16')"><span id="tab-r16-lbl">16</span></div>
+  <div class="tab" id="tab-qf" onclick="switchTab('qf')"><span id="tab-qf-lbl">QF</span></div>
+  <div class="tab" id="tab-sf" onclick="switchTab('sf')"><span id="tab-sf-lbl">SF</span></div>
+  <div class="tab" id="tab-final" onclick="switchTab('final')"><span id="tab-final-lbl">🏆</span></div>
+  <div class="tab" id="tab-bracket" onclick="switchTab('bracket')"><span id="tab-b-lbl">🗺️ Overview</span></div>
 </div>
 <div id="page-groups" class="page active">
   <div class="container">
@@ -235,6 +258,51 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
     <div class="bwrap"><div class="bracket" id="bk"></div></div>
   </div>
 </div>
+
+<!-- R32 PAGE -->
+<div id="page-r32" class="page">
+  <div class="container">
+    <div class="sec-title" id="lbl-r32-title">Round of 32</div>
+    <p class="hint" id="lbl-r32-hint">👆 Click a team to advance</p>
+    <div id="r32-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- R16 PAGE -->
+<div id="page-r16" class="page">
+  <div class="container">
+    <div class="sec-title" id="lbl-r16-title">Round of 16</div>
+    <p class="hint">👆 Click a team to advance</p>
+    <div id="r16-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- QF PAGE -->
+<div id="page-qf" class="page">
+  <div class="container">
+    <div class="sec-title" id="lbl-qf-title">Quarterfinals</div>
+    <p class="hint">👆 Click a team to advance</p>
+    <div id="qf-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- SF PAGE -->
+<div id="page-sf" class="page">
+  <div class="container">
+    <div class="sec-title" id="lbl-sf-title">Semifinals</div>
+    <p class="hint">👆 Click a team to advance</p>
+    <div id="sf-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- FINAL PAGE -->
+<div id="page-final" class="page">
+  <div class="container">
+    <div class="sec-title" id="lbl-final-title">Grand Final & 3rd Place</div>
+    <div id="final-grid" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:12px;"></div>
+  </div>
+</div>
+
 <div class="abar">
   <button class="abtn p" onclick="saveData()" id="btn-save">💾 Save</button>
   <button class="abtn" onclick="shareLink()" id="btn-share">🔗 Share</button>
@@ -370,6 +438,118 @@ function twemojiCode(emoji){
     i += cp > 0xFFFF ? 2 : 1;
   }
   return pts.join('-');
+}
+
+
+// ══════ MATCH SCHEDULE (UTC) ══════
+// Each entry: [groupId, matchIdx, utcDatetime, venue]
+const SCHEDULE = {
+  A:[
+    ['2026-06-11T23:00:00Z','Mexico City'],
+    ['2026-06-12T02:00:00Z','Guadalajara'],
+    ['2026-06-18T22:00:00Z','Atlanta'],
+    ['2026-06-19T01:00:00Z','Guadalajara'],
+    ['2026-06-24T22:00:00Z','Mexico City'],
+    ['2026-06-24T22:00:00Z','Monterrey'],
+  ],
+  B:[
+    ['2026-06-12T22:00:00Z','Toronto'],
+    ['2026-06-13T01:00:00Z','San Francisco Bay Area'],
+    ['2026-06-18T19:00:00Z','Los Angeles'],
+    ['2026-06-19T22:00:00Z','Vancouver'],
+    ['2026-06-24T19:00:00Z','Vancouver'],
+    ['2026-06-24T19:00:00Z','Seattle'],
+  ],
+  C:[
+    ['2026-06-13T22:00:00Z','New York/New Jersey'],
+    ['2026-06-13T01:00:00Z','Boston'],
+    ['2026-06-19T19:00:00Z','Philadelphia'],
+    ['2026-06-19T22:00:00Z','Boston'],
+    ['2026-06-24T19:00:00Z','Miami'],
+    ['2026-06-24T19:00:00Z','Atlanta'],
+  ],
+  D:[
+    ['2026-06-14T01:00:00Z','Houston'],
+    ['2026-06-14T22:00:00Z','Kansas City'],
+    ['2026-06-20T22:00:00Z','Seattle'],
+    ['2026-06-20T01:00:00Z','Dallas'],
+    ['2026-06-25T22:00:00Z','Houston'],
+    ['2026-06-25T22:00:00Z','San Francisco Bay Area'],
+  ],
+  E:[
+    ['2026-06-14T19:00:00Z','Munich-style: Philadelphia'],
+    ['2026-06-15T01:00:00Z','Dallas'],
+    ['2026-06-21T22:00:00Z','New York/New Jersey'],
+    ['2026-06-21T01:00:00Z','Boston'],
+    ['2026-06-25T19:00:00Z','Philadelphia'],
+    ['2026-06-25T19:00:00Z','New York/New Jersey'],
+  ],
+  F:[
+    ['2026-06-15T22:00:00Z','New York/New Jersey'],
+    ['2026-06-16T01:00:00Z','Houston'],
+    ['2026-06-21T19:00:00Z','Miami'],
+    ['2026-06-22T01:00:00Z','Kansas City'],
+    ['2026-06-26T22:00:00Z','New York/New Jersey'],
+    ['2026-06-26T22:00:00Z','Houston'],
+  ],
+  G:[
+    ['2026-06-15T19:00:00Z','Los Angeles'],
+    ['2026-06-16T22:00:00Z','Dallas'],
+    ['2026-06-22T22:00:00Z','Seattle'],
+    ['2026-06-22T19:00:00Z','Miami'],
+    ['2026-06-26T19:00:00Z','Los Angeles'],
+    ['2026-06-26T19:00:00Z','Dallas'],
+  ],
+  H:[
+    ['2026-06-16T19:00:00Z','Atlanta'],
+    ['2026-06-17T01:00:00Z','Guadalajara'],
+    ['2026-06-23T22:00:00Z','Kansas City'],
+    ['2026-06-23T01:00:00Z','Monterrey'],
+    ['2026-06-27T22:00:00Z','Atlanta'],
+    ['2026-06-27T22:00:00Z','Guadalajara'],
+  ],
+  I:[
+    ['2026-06-17T22:00:00Z','Miami'],
+    ['2026-06-17T19:00:00Z','Boston'],
+    ['2026-06-23T19:00:00Z','Atlanta'],
+    ['2026-06-24T01:00:00Z','Miami'],
+    ['2026-06-27T19:00:00Z','Boston'],
+    ['2026-06-27T19:00:00Z','Miami'],
+  ],
+  J:[
+    ['2026-06-18T01:00:00Z','Dallas'],
+    ['2026-06-18T22:00:00Z','Monterrey'],
+    ['2026-06-23T22:00:00Z','Houston'],
+    ['2026-06-24T01:00:00Z','Dallas'],
+    ['2026-06-28T22:00:00Z','Monterrey'],
+    ['2026-06-28T22:00:00Z','Houston'],
+  ],
+  K:[
+    ['2026-06-18T19:00:00Z','Kansas City'],
+    ['2026-06-19T01:00:00Z','Seattle'],
+    ['2026-06-25T01:00:00Z','Vancouver'],
+    ['2026-06-25T22:00:00Z','Kansas City'],
+    ['2026-06-29T22:00:00Z','Seattle'],
+    ['2026-06-29T22:00:00Z','Vancouver'],
+  ],
+  L:[
+    ['2026-06-19T22:00:00Z','Dallas'],
+    ['2026-06-20T01:00:00Z','Houston'],
+    ['2026-06-25T19:00:00Z','San Francisco Bay Area'],
+    ['2026-06-26T01:00:00Z','Los Angeles'],
+    ['2026-06-29T19:00:00Z','Dallas'],
+    ['2026-06-29T19:00:00Z','Houston'],
+  ],
+};
+
+function formatMatchTime(utcStr){
+  try{
+    const d = new Date(utcStr);
+    const dateOpts = {weekday:'short', day:'numeric', month:'short'};
+    const timeOpts = {hour:'2-digit', minute:'2-digit'};
+    const lang = LANG==='ar'?'ar-SA':LANG==='fr'?'fr-FR':'en-US';
+    return d.toLocaleDateString(lang, dateOpts) + ' · ' + d.toLocaleTimeString(lang, timeOpts);
+  }catch(e){ return ''; }
 }
 
 const GD=[
@@ -740,7 +920,7 @@ function patchStandings(gid){
     const diffStr=s.gd>0?'+'+s.gd:s.gd+'';
     const diffColor=s.gd>0?'var(--green)':s.gd<0?'var(--red)':'var(--text)';
     const posColor=pos===0?'var(--green)':pos===1?'var(--green2)':pos===2?'var(--gold)':'var(--muted)';
-    const badge=isManual&&pos===0?`<span class="drag-badge">☰ ${T[LANG].dragMode}</span>`:'';
+    const badge='';
     tr.innerHTML=`
       <td><span class="drag-handle">☰</span></td>
       <td class="tl" colspan="2">
@@ -762,6 +942,20 @@ function patchStandings(gid){
     const ta=g.teams[ai],tb=g.teams[bi];
     const m1=document.getElementById(`mt1-${gid}-${mi}`);
     const m2=document.getElementById(`mt2-${gid}-${mi}`);
+    const sched = SCHEDULE[gid] && SCHEDULE[gid][mi];
+    const timeStr = sched ? formatMatchTime(sched[0]) : '';
+    const venueStr = sched ? sched[1] : '';
+    const matchRow = document.getElementById(`mr-${gid}-${mi}`);
+    if(matchRow){
+      let timeEl = matchRow.querySelector('.match-time');
+      if(!timeEl){
+        timeEl = document.createElement('div');
+        timeEl.className = 'match-time';
+        timeEl.style.cssText='font-size:9px;color:var(--muted);text-align:center;padding:1px 0 3px;border-bottom:1px solid rgba(255,255,255,.03);margin-bottom:2px;';
+        matchRow.parentNode.insertBefore(timeEl, matchRow);
+      }
+      timeEl.textContent = timeStr + (venueStr ? ' — ' + venueStr : '');
+    }
     if(m1)m1.innerHTML=`${flagImg(ta,22)}<div class="cc">${ta}</div><span class="tn">${tn(ta)}</span>`;
     if(m2)m2.innerHTML=`<span class="tn">${tn(tb)}</span><div class="cc">${tb}</div>${flagImg(tb,22)}`;
   });
@@ -968,7 +1162,7 @@ function setLang(l){
   });
   if(l==='ar') document.body.style.fontFamily="'Cairo',sans-serif";
   else document.body.style.fontFamily="'Rajdhani',sans-serif";
-  updateGroupText();updateUI();updateFavBtn();
+  updateGroupText();updateUI();updateFavBtn();updateRoundTabLabels();
   GD.forEach(g=>patchStandings(g.id));
   renderBest3rds();
   if(document.getElementById('page-bracket').classList.contains('active'))renderBracket();
@@ -1009,7 +1203,119 @@ function updateUI(){
   document.title='KoraSim — '+t.title;
 }
 
-// ══════ FAVOURITE TEAM PICKER ══════
+// ══════ RENDER INDIVIDUAL ROUND ══════
+const ROUND_VENUES = {
+  r32:['Toronto','San Francisco','Houston','Monterrey','Boston','New York/NJ','Los Angeles','Seattle','Philadelphia','Dallas','Kansas City','Atlanta','Vancouver','Guadalajara','Miami','Los Angeles'],
+  r16:['Philadelphia','Boston','Dallas','Los Angeles','Atlanta','Dallas','Vancouver','Houston'],
+  qf:['Philadelphia','Boston','Dallas','Los Angeles'],
+  sf:['Dallas','Atlanta'],
+};
+const ROUND_DATES = {
+  r32:['2026-07-04','2026-07-04','2026-07-05','2026-07-05','2026-07-05','2026-07-05','2026-07-06','2026-07-06','2026-07-06','2026-07-06','2026-07-07','2026-07-07','2026-07-07','2026-07-07','2026-07-08','2026-07-08'],
+  r16:['2026-07-11','2026-07-11','2026-07-12','2026-07-12','2026-07-12','2026-07-13','2026-07-13','2026-07-13'],
+  qf:['2026-07-16','2026-07-17','2026-07-17','2026-07-18'],
+  sf:['2026-07-14','2026-07-15'],
+};
+
+function renderRound(rk){
+  const grid = document.getElementById(rk+'-grid');
+  if(!grid) return;
+  propagate();
+  grid.innerHTML='';
+  const matches = BK[rk];
+  const venues = ROUND_VENUES[rk]||[];
+  const dates = ROUND_DATES[rk]||[];
+  matches.forEach((m,i)=>{
+    const card = buildFullMatchCard(rk, i, m, venues[i]||'', dates[i]||'');
+    grid.appendChild(card);
+  });
+  attachBKInputs();
+}
+
+function buildFullMatchCard(rk, idx, m, venue, dateStr){
+  const div = document.createElement('div');
+  const hasFav = (m.t1&&m.t1.code===FAV)||(m.t2&&m.t2.code===FAV);
+  div.className = 'match-card-full' + (hasFav?' has-fav':'');
+
+  const dateDisplay = dateStr ? new Date(dateStr+'T20:00:00Z').toLocaleDateString(
+    LANG==='ar'?'ar-SA':LANG==='fr'?'fr-FR':'en-US',
+    {weekday:'short',day:'numeric',month:'long',year:'numeric'}
+  ) : '';
+
+  div.innerHTML = `
+    <div class="mcf-header">
+      <span>${venue}</span>
+      <span>${dateDisplay}</span>
+    </div>
+    <div class="mcf-teams">
+      ${buildMcfTeam(rk,idx,0,m.t1,m.winner)}
+      <div class="mcf-score">
+        <input class="mcf-si ${m.winner===0?'wsi':''}" type="number" min="0" max="20" value="${m.s1}" placeholder="-" data-rk="${rk}" data-i="${idx}" data-s="0" inputmode="numeric">
+        <span class="mcf-vs">—</span>
+        <input class="mcf-si ${m.winner===1?'wsi':''}" type="number" min="0" max="20" value="${m.s2}" placeholder="-" data-rk="${rk}" data-i="${idx}" data-s="1" inputmode="numeric">
+      </div>
+      ${buildMcfTeam(rk,idx,1,m.t2,m.winner)}
+    </div>`;
+  return div;
+}
+
+function buildMcfTeam(rk, idx, side, t, winner){
+  if(!t) return `<div class="mcf-team tbd">${T[LANG].tbd||'TBD'}</div>`;
+  const isSel = winner === side;
+  const isFav = t.code === FAV;
+  const cls = 'mcf-team' + (isSel?' sel'+(isFav?' fav':''):'');
+  return `<div class="${cls}" onclick="pickWRound('${rk}',${idx},${side})">
+    ${flagImg(t.code,22)}<span style="flex:1">${t.n}</span>
+    ${isSel?'<span style="color:var(--green)">✓</span>':''}
+  </div>`;
+}
+
+function pickWRound(rk, i, side){
+  const ref={r32:BK.r32,r16:BK.r16,qf:BK.qf,sf:BK.sf,fin:BK.fin,tp:BK.tp}[rk];
+  if(!ref||!ref[i]) return;
+  const t = side===0?ref[i].t1:ref[i].t2;
+  if(!t) return;
+  ref[i].winner = ref[i].winner===side ? null : side;
+  propagate();
+  renderRound(rk);
+  // Also re-render bracket if open
+  if(document.getElementById('page-bracket').classList.contains('active')) renderBracket();
+}
+
+function renderFinalPage(){
+  const grid = document.getElementById('final-grid');
+  if(!grid) return;
+  propagate();
+  grid.innerHTML='';
+  // Final card
+  const fc = document.createElement('div');
+  fc.style.cssText='min-width:300px;max-width:400px;flex:1;';
+  fc.appendChild(mkFinalCard());
+  grid.appendChild(fc);
+  // 3rd place
+  const tc = document.createElement('div');
+  tc.style.cssText='min-width:280px;max-width:380px;flex:1;';
+  tc.appendChild(mkTPCard());
+  grid.appendChild(tc);
+  attachBKInputs();
+}
+
+// ══════ UPDATE TAB LABELS ══════
+function updateRoundTabLabels(){
+  const t = T[LANG];
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('tab-r32-lbl', t.r32||'R32');
+  s('tab-r16-lbl', t.r16||'R16');
+  s('tab-qf-lbl',  t.qf||'QF');
+  s('tab-sf-lbl',  t.sf||'SF');
+  s('tab-final-lbl','🏆');
+  s('lbl-r32-title', t.r32||'Round of 32');
+  s('lbl-r16-title', t.r16||'Round of 16');
+  s('lbl-qf-title',  t.qf||'Quarterfinals');
+  s('lbl-sf-title',  t.sf||'Semifinals');
+  s('lbl-final-title','🏆 '+(t.final||'Grand Final'));
+  s('tab-b-lbl', '🗺️ '+(t.bracket||'Overview'));
+}
 function openFavPicker(){
   const modal=document.getElementById('fav-modal');
   const grid=document.getElementById('fav-grid');
@@ -1068,6 +1374,8 @@ document.addEventListener('click', e=>{
   const modal=document.getElementById('fav-modal');
   if(modal && e.target===modal) closeFavPicker();
 });
+
+function detectLang(){
   const nav=navigator.language||navigator.userLanguage||'en';
   const l=nav.toLowerCase();
   if(l.startsWith('ar'))return 'ar';
@@ -1079,8 +1387,15 @@ function switchTab(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.getElementById('tab-'+id).classList.add('active');
-  if(id==='bracket'){propagate();renderBracket();}
+  const tabEl = document.getElementById('tab-'+id);
+  if(tabEl) tabEl.classList.add('active');
+  propagate();
+  if(id==='bracket') renderBracket();
+  else if(id==='r32') renderRound('r32');
+  else if(id==='r16') renderRound('r16');
+  else if(id==='qf')  renderRound('qf');
+  else if(id==='sf')  renderRound('sf');
+  else if(id==='final') renderFinalPage();
 }
 
 function saveData(){
@@ -1146,6 +1461,7 @@ setLang(LANG);
 buildGroups();
 propagate();
 updateFavBtn();
+updateRoundTabLabels();
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"KoraSim — FIFA World Cup 2026 Simulator","url":"https://korasim.com","applicationCategory":"SportsApplication","inLanguage":["en","fr","ar"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
