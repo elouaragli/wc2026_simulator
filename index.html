@@ -310,7 +310,7 @@ body.rtl .drag-badge{margin-left:0;margin-right:6px;}
   <button class="abtn" onclick="resetAll()" id="btn-reset">🔄 Reset</button>
 </div>
 <div class="toast" id="toast"></div>
-<p class="fnote" id="fnote">KoraSim.com — World Cup 2026 Simulator · <a href="/privacy.html" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a></p>
+<p class="fnote" id="fnote">KoraSim.com — World Cup 2026 Simulator &nbsp;·&nbsp; <a href="/privacy.html" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--muted)'">Privacy Policy</a></p>
 
 <script>
 // ══════ TRANSLATIONS ══════
@@ -330,7 +330,7 @@ const T={
     clickTeam:'Pick a team above ↑',
     best3:'Best 3rd-Place Teams',best3hint:'👆 Click a row to qualify / disqualify · 🤖 Auto · ✏️ Manual',max8:'Maximum 8 teams already selected',resetAuto:'Reset to auto ranking',
     rank:'Rank',team:'Team',group:'Group',
-    note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable',
+    note:'KoraSim.com — World Cup 2026 Simulator · Free · Shareable',privacy:'Privacy Policy',
     chooseTeam:'Choose your team',noFav:'No favourite',podiumTitle:'WORLD CUP 2026 PODIUM'},
   fr:{title:'KORASIM — COUPE DU MONDE FIFA 2026',sub:'Simuler · Prédire · Partager',
     tabG:'📋 Groupes',tabB:'🏆 Tableau',groups:'Phase de Groupes',bracket:'Tableau Final',
@@ -347,7 +347,7 @@ const T={
     clickTeam:'Clique sur une équipe ↑',
     best3:'Meilleurs 3es',best3hint:"👆 Clique pour qualifier/disqualifier · 🤖 Auto · ✏️ Manuel",max8:'Maximum 8 équipes déjà sélectionnées',resetAuto:'Revenir au classement auto',
     rank:'Rang',team:'Équipe',group:'Groupe',
-    note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable',
+    note:'KoraSim.com — Simulateur Coupe du Monde 2026 · Gratuit · Partageable',privacy:'Politique de Confidentialité',
     chooseTeam:'Choisir votre équipe',noFav:'Aucune équipe favorite',podiumTitle:'PODIUM COUPE DU MONDE 2026'},
   ar:{title:'كوراسيم — كأس العالم FIFA 2026',sub:'محاكاة · تنبؤ · مشاركة',
     tabG:'📋 المجموعات',tabB:'🏆 الجدول',groups:'مرحلة المجموعات',bracket:'مرحلة الإقصاء',
@@ -364,7 +364,7 @@ const T={
     clickTeam:'انقر على فريق أعلاه ↑',
     best3:'أفضل الفرق الثالثة',best3hint:'👆 انقر للتأهيل أو الإقصاء · 🤖 تلقائي · ✏️ يدوي',max8:'تم اختيار 8 فرق بالفعل',resetAuto:'إعادة الترتيب التلقائي',
     rank:'الترتيب',team:'الفريق',group:'المجموعة',
-    note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة',
+    note:'KoraSim.com — محاكي كأس العالم 2026 · مجاني · قابل للمشاركة',privacy:'سياسة الخصوصية',
     chooseTeam:'اختر فريقك',noFav:'بدون فريق مفضل',podiumTitle:'منصة التتويج كأس العالم 2026'},
 };
 
@@ -1257,7 +1257,7 @@ function updateUI(){
   s('lbl-q1',t.q1);s('lbl-q2',t.q2);s('lbl-q3',t.q3);
   s('lbl-hint',t.hint);s('lbl-bhint',t.bhint);
   s('btn-save',t.save);s('btn-share',t.share);s('btn-reset',t.reset);
-  s('fnote',t.note);
+  const fnoteEl=document.getElementById('fnote'); if(fnoteEl) fnoteEl.innerHTML=t.note+' &nbsp;·&nbsp; <a href="/privacy.html" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color=\'var(--green)\'" onmouseout="this.style.color=\'var(--muted)\'">'+( t.privacy||'Privacy Policy')+'</a>';
   document.title='KoraSim — '+t.title;
 }
 
@@ -1628,73 +1628,14 @@ function loadSaved(){
 function shareLink(){
   try{
     const activeTab = document.querySelector('.page.active')?.id?.replace('page-','') || 'groups';
-    const compact = buildCompact(activeTab);
-    const enc = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
-    const url = location.href.split('?')[0]+'?d='+enc;
-    navigator.clipboard.writeText(url)
-      .then(()=>toast(T[LANG].copied||'Copied!'))
-      .catch(()=>prompt('Copy:', url));
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify({SC,MO,MOM,BK,LANG,BEST3_SEL,BEST3_MODE,FAV,TAB:activeTab}))));
+    const url=location.href.split('?')[0]+'?d='+enc;
+    navigator.clipboard.writeText(url).then(()=>toast(T[LANG].copied)).catch(()=>prompt('Copy:',url));
   }catch(e){toast('Error');}
-}
-
-function buildCompact(tab){
-  // Default group order
-  const DEF_MO = {A:['MX','KR','ZA','CZ'],B:['CA','CH','QA','BA'],C:['BR','MA','SC','HT'],
-    D:['US','AU','PY','TR'],E:['DE','EC','CI','CW'],F:['NL','JP','TN','SE'],
-    G:['BE','IR','EG','NZ'],H:['ES','UY','SA','CV'],I:['FR','SN','NO','IQ'],
-    J:['AR','AT','DZ','JO'],K:['PT','CO','UZ','CD'],L:['EN','HR','PA','GH']};
-  
-  const out = {};
-  
-  // SC: only non-empty scores
-  const scOut = {};
-  Object.keys(SC).forEach(g => {
-    const matches = SC[g].map((m,i) => (m.s1!==''||m.s2!=='') ? [i,m.s1,m.s2] : null).filter(Boolean);
-    if(matches.length) scOut[g] = matches;
-  });
-  if(Object.keys(scOut).length) out.sc = scOut;
-  
-  // MO: only groups with non-default order
-  const moOut = {};
-  Object.keys(MO).forEach(g => {
-    if(JSON.stringify(MO[g]) !== JSON.stringify(DEF_MO[g])) moOut[g] = MO[g];
-  });
-  if(Object.keys(moOut).length) out.mo = moOut;
-  
-  // MOM: only if any manual overrides
-  const momOut = {};
-  Object.keys(MOM).forEach(g => { if(!MOM[g]) momOut[g] = false; });
-  if(Object.keys(momOut).length) out.mom = momOut;
-  
-  // BK: only bracket results (winner + scores), skip null teams and team names
-  const bkOut = {};
-  ['r32','r16','qf','sf','fin','tp'].forEach(rk => {
-    const arr = BK[rk];
-    if(!arr) return;
-    const matches = arr.map((m,i) => {
-      if(m.winner===null&&m.s1===''&&m.s2==='') return null;
-      return [i, m.winner, m.s1||'', m.s2||''];
-    }).filter(Boolean);
-    if(matches.length) bkOut[rk] = matches;
-  });
-  if(Object.keys(bkOut).length) out.bk = bkOut;
-  
-  // Simple fields
-  if(LANG!=='en') out.l = LANG;
-  if(BEST3_MODE!==0) out.b3m = BEST3_MODE;
-  if(Object.keys(BEST3_SEL).length) out.b3s = BEST3_SEL;
-  if(FAV) out.fav = FAV;
-  if(tab!=='groups') out.tab = tab;
-  
-  return out;
 }
 function loadFromUrl(){
   try{const p=new URLSearchParams(location.search);
-    if(!p.has('d')) return;
-    const parsed=JSON.parse(decodeURIComponent(escape(atob(p.get('d')))));
-    
-    // Support both old format (SC/MO/BK) and new compact format (sc/mo/bk)
-    if(parsed.SC){ // old format
+    if(p.has('d')){const parsed=JSON.parse(decodeURIComponent(escape(atob(p.get('d')))));
       if(parsed.SC)SC=parsed.SC;if(parsed.MO)MO=parsed.MO;
       if(parsed.MOM)MOM=parsed.MOM;if(parsed.BK)BK=parsed.BK;
       if(parsed.LANG)LANG=parsed.LANG;
@@ -1702,28 +1643,8 @@ function loadFromUrl(){
       if(parsed.BEST3_MODE!==undefined)BEST3_MODE=parsed.BEST3_MODE;
       if(parsed.FAV!==undefined)FAV=parsed.FAV;
       if(parsed.TAB)window._startTab=parsed.TAB;
-    } else { // new compact format
-      if(parsed.sc){
-        Object.keys(parsed.sc).forEach(g => {
-          parsed.sc[g].forEach(([i,s1,s2]) => { SC[g][i]={s1,s2}; });
-        });
-      }
-      if(parsed.mo) Object.assign(MO, parsed.mo);
-      if(parsed.mom) Object.assign(MOM, parsed.mom);
-      if(parsed.bk){
-        ['r32','r16','qf','sf','fin','tp'].forEach(rk => {
-          if(parsed.bk[rk]) parsed.bk[rk].forEach(([i,winner,s1,s2]) => {
-            if(BK[rk]&&BK[rk][i]) { BK[rk][i].winner=winner; BK[rk][i].s1=s1; BK[rk][i].s2=s2; }
-          });
-        });
-      }
-      if(parsed.l) LANG=parsed.l;
-      if(parsed.b3m!==undefined) BEST3_MODE=parsed.b3m;
-      if(parsed.b3s) BEST3_SEL=parsed.b3s;
-      if(parsed.fav) FAV=parsed.fav;
-      if(parsed.tab) window._startTab=parsed.tab;
     }
-  }catch(e){ console.error('loadFromUrl error:',e); }
+  }catch(e){}
 }
 function resetAll(){
   localStorage.removeItem('korasim_v2');
@@ -1763,7 +1684,6 @@ if(window._startTab && window._startTab !== 'groups'){
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"KoraSim — FIFA World Cup 2026 Simulator","url":"https://korasim.com","applicationCategory":"SportsApplication","inLanguage":["en","fr","ar"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
-  <!-- Vercel Analytics -->
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
